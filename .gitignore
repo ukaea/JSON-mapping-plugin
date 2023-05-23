@@ -1,3 +1,7 @@
+# Build & Install
+build/*
+install/*
+
 # Prerequisites
 *.d
 
