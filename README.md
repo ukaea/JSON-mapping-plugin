@@ -1,3 +1,3 @@
-# UDA Mapping Plugin
+# JSON Mapping Plugin
 
 
