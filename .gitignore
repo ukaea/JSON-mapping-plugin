@@ -1,5 +1,5 @@
 # Build & Install
-build/*
+build*/*
 install/*
 
 # Prerequisites
