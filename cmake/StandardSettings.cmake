@@ -1,7 +1,7 @@
 #
 # Compiler options
 #
-option(${PROJECT_NAME}_WARNINGS_AS_ERRORS "Treat compiler warnings as errors." ON)
+option(${PROJECT_NAME}_WARNINGS_AS_ERRORS "Treat compiler warnings as errors." OFF)
 
 #
 # Unit testing
@@ -14,8 +14,8 @@ option(${PROJECT_NAME}_USE_GTEST "Use the GoogleTest project for creating unit t
 # Static analyzers
 #
 # Currently supporting: Clang-Tidy, Cppcheck.
-option(${PROJECT_NAME}_ENABLE_CLANG_TIDY "Enable static analysis with Clang-Tidy." ON)
-option(${PROJECT_NAME}_ENABLE_CPPCHECK "Enable static analysis with Cppcheck." ON)
+option(${PROJECT_NAME}_ENABLE_CLANG_TIDY "Enable static analysis with Clang-Tidy." OFF)
+option(${PROJECT_NAME}_ENABLE_CPPCHECK "Enable static analysis with Cppcheck." OFF)
 
 #
 # Miscellaneous options

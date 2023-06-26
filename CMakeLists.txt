@@ -4,228 +4,123 @@ cmake_minimum_required(VERSION 3.15)
 # Project details
 #
 project(
-    UDAMappingPlugin
+    JSONMappingPlugin
     VERSION 0.1.0
     LANGUAGES CXX
 )
 
 #
+# Extra cmake modules to find libraries
+#
+set( CMAKE_MODULE_PATH
+    ${CMAKE_MODULE_PATH}
+    ${CMAKE_SOURCE_DIR}/cmake
+    ${CMAKE_SOURCE_DIR}/cmake/Modules
+)
+
+# find_package( Boost REQUIRED )
+
+#
 # Set project options
 #
-include(cmake/StandardSettings.cmake)
-include(cmake/StaticAnalyzers.cmake)
-include(cmake/Utils.cmake)
+include( StandardSettings )
+include( StaticAnalyzers )
+include( Utils )
+
+
+message(STATUS "CMAKE_MODULE_PATH: ${CMAKE_MODULE_PATH}")
+
 if (NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Debug")
 endif()
 message(STATUS "Started CMake for ${PROJECT_NAME} v${PROJECT_VERSION}...\n")
 
-if (UNIX)
-    #
-    # this will allow to use same _DEBUG macro available in both Linux 
-    # as well as Windows - MSCV environment. Easy to put Debug specific code.
-    #
-    add_compile_options("$<$<CONFIG:DEBUG>:-D_DEBUG>") 
-endif (UNIX)
-
-set(PROJECT_NAME_LOWERCASE ${PROJECT_NAME})
-set(PROJECT_NAME_UPPERCASE ${PROJECT_NAME})
-
 #
 # Prevent building in the source directory
 #
 if(PROJECT_SOURCE_DIR STREQUAL PROJECT_BINARY_DIR)
-  message(FATAL_ERROR "In-source builds not allowed. Please make a new directory (called a build directory) and run CMake from there.\n")
+    message(FATAL_ERROR "In-source builds not allowed.
+            Please make a new directory (called a build directory)
+            and run CMake from there.\n")
 endif()
 
-#
-# Create library, setup header and source files
-#
-# Find all headers and implementation files
-include(cmake/SourcesAndHeaders.cmake)
+set( CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fPIC -pthread" )
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fPIC -pthread" )
 
-add_library(
-    ${PROJECT_NAME}
-    ${headers}
-    ${sources}
-)
-
-if(${PROJECT_NAME}_VERBOSE_OUTPUT)
-    verbose_message("Found the following sources:")
-    foreach(source IN LISTS sources)
-        verbose_message("* ${source}")
-    endforeach()
-    verbose_message("Found the following headers:")
-    foreach(header IN LISTS headers)
-        verbose_message("* ${header}")
-    endforeach()
-endif()
-
-message(STATUS "Project Name : ${PROJECT_NAME}.\n")
-set_target_properties(
-  ${PROJECT_NAME}
-  PROPERTIES
-  ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
-  LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/lib/${CMAKE_BUILD_TYPE}"
-  RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/${CMAKE_BUILD_TYPE}"
-)
-message(STATUS "Added all header and implementation files.\n")
+set( PLUGINS IMAS_JSON_MAP )
+message(STATUS "PLUGINS: ${PLUGINS}")
+add_subdirectory( JSON_mapping_plugin )
 
 #
-# Model project dependencies
-#
-# Identify and link with the specific "packages" the project uses
-#find_package(package_name package_version REQUIRED package_type [other_options])
-#target_link_libraries(
-#  ${PROJECT_NAME}
-#  PUBLIC
-#    dependency1 ...
-#  PRIVATE
-#    dependency2 ...
-#    ${PROJECT_NAME}_PROJECT_OPTIONS
-#    ${PROJECT_NAME}_PROJECT_WARNINGS
-#)
-#if(${PROJECT_NAME}_BUILD_EXECUTABLE AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
-#  target_link_libraries(
-#    ${PROJECT_NAME}_LIB
-#    PUBLIC
-#      dependency1 ...
-#  )
-#endif()
-
-# For Windows, it is necessary to link with the MultiThreaded library.
-# Depending on how the rest of the project's dependencies are linked, it might be necessary
-# to change the line to statically link with the library.
-#
-# This is done as follows:
-#
-# set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
-#
-
-target_include_directories(
-${PROJECT_NAME}
-PUBLIC
-$<INSTALL_INTERFACE:include>
-$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-PRIVATE
-${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-if(${PROJECT_NAME}_BUILD_EXECUTABLE AND ${PROJECT_NAME}_ENABLE_UNIT_TESTING)
-target_include_directories(
-  ${PROJECT_NAME}_LIB
-  PUBLIC
-  $<INSTALL_INTERFACE:include>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/src
-)
-endif()
-message(STATUS "Finished setting up include directories.")
-
-#
-# Provide alias to library for
-#
-add_library(${PROJECT_NAME}::${PROJECT_NAME} ALIAS ${PROJECT_NAME})
-verbose_message("Project is now aliased as ${PROJECT_NAME}::${PROJECT_NAME}.\n")
-
-#
-# Format the project using the `clang-format` target (i.e: cmake --build build --target clang-format)
-#
-add_clang_format_target()
-
-#
-# Install library for easy downstream inclusion
-#
-include(GNUInstallDirs)
-install(
-  TARGETS
-  ${PROJECT_NAME}
-  EXPORT
-  ${PROJECT_NAME}Targets
-  LIBRARY DESTINATION
-  ${CMAKE_INSTALL_LIBDIR}
-  RUNTIME DESTINATION
-  ${CMAKE_INSTALL_BINDIR}
-  ARCHIVE DESTINATION
-  ${CMAKE_INSTALL_LIBDIR}
-  INCLUDES DESTINATION
-  include
-  PUBLIC_HEADER DESTINATION
-  include
-)
-
-install(
-  EXPORT
-  ${PROJECT_NAME}Targets
-  FILE
-  ${PROJECT_NAME}Targets.cmake
-  NAMESPACE
-  ${PROJECT_NAME}::
-  DESTINATION
-  ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-
-#
-# Add version header
+# Create module
 #
 configure_file(
-  ${CMAKE_CURRENT_LIST_DIR}/cmake/version.hpp.in
-  include/${PROJECT_NAME_LOWERCASE}/version.hpp
+    ${CMAKE_SOURCE_DIR}/JSON_mapping_plugin/etc/module.in
+    ${CMAKE_BINARY_DIR}/etc/JSON_mapping_plugin/${PROJECT_VERSION}
+    @ONLY
+)
+
+set( MODULE_PATH "modulefiles/JSON_mapping_plugin" CACHE PATH "location to install module files to" )
+set( MODULE_NAME "${PROJECT_VERSION}" CACHE STRING "name of the module file" )
+string( CONFIGURE "${MODULE_PATH}" MODULE_PATH_EXPANDED @ONLY )
+
+get_filename_component(
+    MODULE_PATH_EXPANDED ${MODULE_PATH_EXPANDED}
+    REALPATH BASE_DIR "${CMAKE_INSTALL_PREFIX}"
+)
+
+install(
+    FILES ${CMAKE_BINARY_DIR}/etc/JSON_mapping_plugin/${PROJECT_VERSION}
+    DESTINATION ${MODULE_PATH_EXPANDED}
+    RENAME ${MODULE_NAME}
+)
+
+#
+# Find UDA and RPC
+#
+if( TIRPC )
+  find_package( TIRPC REQUIRED )
+  include_directories( ${TIRPC_INCLUDE_DIRS} )
+  link_libraries( ${TIRPC_LIBRARIES} )
+  add_definitions( -DTIRPC )
+endif()
+
+find_package( UDA 2.7.0 REQUIRED )
+
+set( UDA_HOME ${UDA_DIR} )
+include_directories( ${UDA_CPP_INCLUDE_DIRS} )
+include_directories( ${CMAKE_CURRENT_LIST_DIR} )
+
+# This list is appended to by the uda_plugin macro
+set( BUILT_PLUGINS "${PLUGINS}" )
+
+#
+# Generate scripts
+#
+string( REGEX REPLACE ";" " " PLUGINS "${BUILT_PLUGINS}" )
+configure_file(
+  ${CMAKE_SOURCE_DIR}/scripts/activate-plugins.sh.in
+  ${CMAKE_BINARY_DIR}/scripts/activate-plugins.sh
+  @ONLY
+)
+configure_file(
+  ${CMAKE_SOURCE_DIR}/scripts/remove-plugins.sh.in
+  ${CMAKE_BINARY_DIR}/scripts/remove-plugins.sh
   @ONLY
 )
 
-install(
-  FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/include/${PROJECT_NAME_LOWERCASE}/version.hpp
-  DESTINATION
-  include/${PROJECT_NAME_LOWERCASE}
-)
-
 #
-# Install the `include` directory
+# Format the project using the `clang-format` target
+# (i.e: cmake --build build --target clang-format)
 #
-install(
-  DIRECTORY
-  include/${PROJECT_NAME_LOWERCASE}
-  DESTINATION
-  include
-)
-verbose_message("Install targets successfully built. Install with `cmake --build <build_directory> --target install --config <build_config>`.")
-
-#
-# Quick `ConfigVersion.cmake` creation
-#
-
-include(CMakePackageConfigHelpers)
-write_basic_package_version_file(
-  ${PROJECT_NAME}ConfigVersion.cmake
-  VERSION
-  ${PROJECT_VERSION}
-  COMPATIBILITY
-  SameMajorVersion
-)
-
-configure_package_config_file(
-  ${CMAKE_CURRENT_LIST_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  INSTALL_DESTINATION
-  ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-
-install(
-  FILES
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-  ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-  DESTINATION
-  ${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}
-)
-message(STATUS "Finished building requirements for installing the package.\n")
+add_clang_format_target()
 
 #
 # Unit testing setup
 #
 if(${PROJECT_NAME}_ENABLE_UNIT_TESTING)
-  enable_testing()
-  message(STATUS "Build unit tests for the project. Tests should always be found in the test folder\n")
-  add_subdirectory(test)
+    enable_testing()
+    message(STATUS "Build unit tests for the project.")
+    message(STATUS "Tests should always be found in the test folder")
+    add_subdirectory(test)
 endif()

@@ -1,16 +1,22 @@
-set(sources
+set(SOURCES
+    JSON_mapping_plugin.cpp
     src/tmp.cpp
 )
 
-set(exe_sources
-	src/main.cpp
-	${sources}
+#set(EXE_SOURCES
+#    ${SOURCES}
+#)
+
+# set(HEADERS
+#     JSON_mapping_plugin.h
+#     include/tmp.hpp
+# )
+
+set(INCLUDE_DIRS
+    include
+    ext_include
 )
 
-set(headers
-    include/UDAMappingPlugin/tmp.hpp
-)
-
-set(test_sources
-  src/tmp_test.cpp
+set(TEST_SOURCES
+    src/tmp_test.cpp
 )
