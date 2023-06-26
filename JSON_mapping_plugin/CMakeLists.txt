@@ -7,7 +7,6 @@ set ( CMAKE_CXX17_STANDARD_COMPILE_OPTION "-std=c++17" )
 set ( CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=c++17" )
 set ( CMAKE_CXX_EXTENSIONS ON )
 
-include( plugins )
 #include( SourcesAndHeaders )
 
 find_package( Boost REQUIRED )
@@ -15,13 +14,12 @@ find_package( Boost REQUIRED )
 set( CONFIGS
     configs/json_mapping.cfg
 )
-
 set( SOURCES
     JSON_mapping_plugin.cpp
 )
-
 set( JSON_LIBNAME JSON_mapping_plugin )
 
+include( plugins )
 uda_plugin(
     NAME IMAS_JSON_MAP
     ENTRY_FUNC jsonMappingPlugin
