@@ -9,7 +9,11 @@ project(
     )
 verbose_message("Adding tests under ${CMAKE_PROJECT_NAME}Tests...")
 
-foreach(file ${test_sources})
+# set(TEST_SOURCES
+    # src/tmp_test.cpp
+    # )
+
+foreach(file ${TEST_SOURCES})
     string(REGEX REPLACE "(.*/)([a-zA-Z0-9_ ]+)(\.cpp)" "\\2" test_name ${file}) 
     add_executable(${test_name}_Tests ${file})
 
@@ -36,7 +40,7 @@ foreach(file ${test_sources})
     else()
         set(${CMAKE_PROJECT_NAME}_TEST_LIB ${CMAKE_PROJECT_NAME})
     endif()
-
+    
     if(${CMAKE_PROJECT_NAME}_USE_GTEST)
         find_package(GTest REQUIRED)
 

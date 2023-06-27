@@ -1,0 +1,8 @@
+#!/bin/bash
+
+UDA_HOME=@UDA_HOME@
+
+for PLUGIN in @PLUGINS@
+do
+    $UDA_HOME/bin/install_plugin -u $UDA_HOME uninstall $PLUGIN
+done

@@ -95,12 +95,14 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface)
     std::vector<int> vec_indices(indices, indices + nindices);
 
     std::ofstream my_log_file;
-    my_log_file.open("/home/adam/UDADevelopment/adam_2.log", std::ios_base::app);
+    my_log_file.open("/Users/aparker/UDADevelopment/adam.log", std::ios_base::app);
     my_log_file << "AJP: Hello World" << std::endl;
     my_log_file.close();
 
-    const int err{0};
-    return err;
+    return setReturnDataIntScalar(data_block, 42, nullptr);
+
+    // const int err{0};
+    // return err;
 }
 
 //////////////////////////////////////////////////////////
@@ -108,11 +110,6 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface)
 
 int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
-
-    std::ofstream my_log_file;
-    my_log_file.open("/home/adam/UDADevelopment/adam_2.log", std::ios_base::app);
-    my_log_file << "AJP: Hello World" << std::endl;
-    my_log_file.close();
 
     //----------------------------------------------------------------------------------------
     // Standard v1 Plugin Interface

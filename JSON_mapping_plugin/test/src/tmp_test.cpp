@@ -1,5 +1,5 @@
-#include "JSON_mapping_plugin.h"
-#include "include/tmp.hpp"
+// #include "JSON_mapping_plugin.hpp"
+#include "tmp.hpp"
 
 #include <gtest/gtest.h>
 
