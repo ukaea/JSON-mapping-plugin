@@ -48,3 +48,9 @@ if(${PROJECT_NAME}_ENABLE_UNIT_TESTING)
     message(STATUS "Tests should always be found in the test folder")
     add_subdirectory(test)
 endif()
+
+#
+# Format the project using the `clang-format` target
+# (i.e: cmake --build build --target clang-format)
+#
+add_clang_format_target()

@@ -34,3 +34,9 @@ install/*
 *.exe
 *.out
 *.app
+
+# Machine dependent compile commands
+compile_commands.json
+
+# Compiler cache (clangd)
+.cache

@@ -109,9 +109,3 @@ configure_file(
     ${CMAKE_BINARY_DIR}/scripts/remove-plugins.sh
     @ONLY
     )
-
-#
-# Format the project using the `clang-format` target
-# (i.e: cmake --build build --target clang-format)
-#
-add_clang_format_target()
