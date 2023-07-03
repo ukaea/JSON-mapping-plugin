@@ -3,3 +3,4 @@
 # Environmental Variables are available on server after install
 export UDA_DIRECTORY=@CMAKE_INSTALL_PREFIX@/etc/
 export UDA_IMAS_MACHINE_MAP=@CMAKE_INSTALL_PREFIX@/etc/plugins.d/imas_mapping/machines.txt
+export JSON_MAPPING_DIR=/Users/aparker/UDADevelopment/mast-u-imas-mappings/

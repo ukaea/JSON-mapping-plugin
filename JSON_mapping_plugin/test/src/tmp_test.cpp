@@ -8,7 +8,7 @@ TEST(TmpAddTest, CheckValues) {
     EXPECT_TRUE(true);
 }
 
-TEST(TmpAddTest22, CheckValues) {
+TEST(TmpAdd2Test, CheckValues) {
     ASSERT_EQ(tmp::add(1,2), 3);
     EXPECT_TRUE(true);
 }
