@@ -43,7 +43,8 @@ int MappingHandler::load_all() {
 
 int MappingHandler::load_globals(const std::string& ids_str) {
 
-    std::string file_path{m_mapping_dir + "/" + ids_str + "/" + "globals.json"};
+    std::string file_path{"/" + m_mapping_dir + "/" + ids_str + "/" +
+                          "globals.json"};
 
     std::ifstream globals_file;
     globals_file.open(file_path);

@@ -11,9 +11,10 @@ int ValueEntry::map(
     // assumption that any arrays of numbers, all the same type
     if (temp_val.is_structured()) {
         if (temp_val.is_array()) {
-            if (std::all_of(
-                    temp_val.begin(), temp_val.end(),
-                    [](const nlohmann::json& els) { return els.is_number(); })) {
+            if (std::all_of(temp_val.begin(), temp_val.end(),
+                            [](const nlohmann::json& els) {
+                                return els.is_number();
+                            })) {
                 if (temp_val.front().is_number_float()) {
                     auto temp_vec = temp_val.get<std::vector<float>>();
                     imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<

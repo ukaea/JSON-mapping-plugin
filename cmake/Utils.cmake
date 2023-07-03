@@ -16,12 +16,13 @@ function(add_clang_format_target)
     endif()
 
     if(${PROJECT_NAME}_CLANG_FORMAT_BINARY)
-        if(${PROJECT_NAME}_BUILD_EXECUTABLE)
-            add_custom_target(clang-format
-                COMMAND ${${PROJECT_NAME}_CLANG_FORMAT_BINARY}
-                -i --verbose ${SOURCES} ${HEADERS} ${TEST_SOURCES}
-                WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-        endif()
+        message(STATUS "CLANG BINARY: ${${PROJECT_NAME}_CLANG_FORMAT_BINARY}")
+        message(STATUS "CLANG SOURCES: ${SOURCES}")
+        message(STATUS "CLANG HEADERS: ${HEADERS}")
+        add_custom_target(clang-format
+            COMMAND ${${PROJECT_NAME}_CLANG_FORMAT_BINARY}
+            -i --verbose ${SOURCES} ${HEADERS}
+            WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
         message(STATUS "Format the project using the `clang-format` target (i.e: cmake --build build --target clang-format).\n")
     endif()
 endfunction()

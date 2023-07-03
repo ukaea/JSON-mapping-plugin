@@ -1,9 +1,9 @@
 #pragma once
 
+#include <helpers/uda_plugin_helpers.hpp>
 #include <nlohmann/json.hpp>
 #include <plugins/pluginStructs.h>
 #include <plugins/udaPlugin.h>
-#include <helpers/uda_plugin_helpers.hpp>
 
 enum class MapTransfos { VALUE, MAP, OFFSET, SCALE, EXPR, DIM };
 
