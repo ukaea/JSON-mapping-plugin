@@ -22,12 +22,57 @@
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
 #include <fstream>
+#include <server/getServerEnvironment.h>
 
 #include <handlers/mapping_handler.hpp>
 
+namespace JSONMapping {
+
+enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
+
+int JPLogger(JPLogLevel log_level, std::string_view log_msg) {
+
+    const ENVIRONMENT* environment = getServerEnvironment();
+
+    std::string log_file_name =
+        std::string{environment->logdir} + "JSON_plugin.log";
+    std::ofstream jp_log_file;
+    jp_log_file.open(log_file_name, std::ios_base::out | std::ios_base::app);
+    std::time_t time_now =
+        std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    const auto timestamp =
+        std::put_time(std::gmtime(&time_now), "%Y-%m-%d:%H:%M:%S");
+    if (!jp_log_file) {
+        return 1;
+    }
+
+    switch (log_level) {
+    case JPLogLevel::DEBUG:
+        jp_log_file << timestamp << ":DEBUG - ";
+        break;
+    case JPLogLevel::INFO:
+        jp_log_file << timestamp << ":INFO - ";
+        break;
+    case JPLogLevel::WARNING:
+        jp_log_file << timestamp << ":WARNING - ";
+        break;
+    case JPLogLevel::ERROR:
+        jp_log_file << timestamp << ":ERROR - ";
+        break;
+    default:
+        jp_log_file << "UHOH,";
+    }
+
+    jp_log_file << log_msg << std::endl;
+    jp_log_file.close();
+    return 0;
+};
+
+}; // namespace JSONMapping
+
 /**
  * @class JSONMappingPlugin
- * @brief 
+ * @brief
  *
  */
 class JSONMappingPlugin {
@@ -48,10 +93,10 @@ class JSONMappingPlugin {
 };
 
 /**
- * @brief 
+ * @brief
  *
- * @param plugin_interface 
- * @return 
+ * @param plugin_interface
+ * @return
  */
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
@@ -74,10 +119,10 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 }
 
 /**
- * @brief 
+ * @brief
  *
- * @param plugin_interface 
- * @return 
+ * @param plugin_interface
+ * @return
  */
 int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     if (init_) {
@@ -88,10 +133,10 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 }
 
 /**
- * @brief 
+ * @brief
  *
- * @param idam_plugin_interface 
- * @return 
+ * @param idam_plugin_interface
+ * @return
  */
 int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     DATA_BLOCK* data_block = idam_plugin_interface->data_block;
@@ -131,11 +176,31 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
+    std::deque<std::string> split_elem_vec;
+    boost::split(split_elem_vec, element_str, boost::is_any_of("/"));
+    if (split_elem_vec.empty()) {
+        RAISE_PLUGIN_ERROR(
+            "ImasMastuPlugin::read: - IDS path could not be split");
+    }
+    // Use first hash of the IDS path as the IDS name
+    std::string current_ids{split_elem_vec.front()};
+
+    // const auto& [ids_attrs_map, map_entries] =
+    // m_mapping_handler.read_mappings(current_ids); if (map_entries.empty()) {
+    //     RAISE_PLUGIN_ERROR("ImasMastuPlugin::read: - JSON mapping not loaded,
+    //     no map entries");
+    // }
+
+    JSONMapping::JPLogger(JSONMapping::JPLogLevel::INFO,
+                          "Check Logging is working");
+
     std::ofstream my_log_file;
-    my_log_file.open("/Users/aparker/UDADevelopment/adam.log",
+    my_log_file.open("/Users/aparker/UDADevelopment/plugin_run/adam.log",
                      std::ios_base::app);
     my_log_file << "AJP: Hello World" << std::endl;
     my_log_file << "Mapping Dir: " << getenv("JSON_MAPPING_DIR") << std::endl;
+    my_log_file << "Element : " << element_str << std::endl;
+    my_log_file << "Current IDS : " << current_ids << std::endl;
     my_log_file.close();
 
     return setReturnDataIntScalar(data_block, 42, nullptr);
@@ -147,8 +212,8 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 /**
  * @brief Plugin entry function
  *
- * @param plugin_interface 
- * @return 
+ * @param plugin_interface
+ * @return
  */
 int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
