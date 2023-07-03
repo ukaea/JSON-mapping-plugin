@@ -1,10 +1,10 @@
 /*---------------------------------------------------------------
- * v1 MAST-U IMAS Mappings Plugin:
+ * v0.1 JSON Mappings Plugin:
  *
  * Input Arguments:	IDAM_PLUGIN_INTERFACE *idam_plugin_interface
  *
  * Returns:		0 if the plugin functionality was successful
- *			otherwise a Error Code is returned
+ *			    otherwise a Error Code is returned
  *
  * Standard functionality:
  *	help	a description of what this plugin does together with a list of
@@ -15,7 +15,7 @@
  *Retain staticly for future reference. read    Entry function for the signal
  *read from the IMAS interface.
  *
- *---------------------------------------------------------------------------------------------------------------*/
+ *--------------------------------------------------------------*/
 #include "JSON_mapping_plugin.h"
 
 #include <boost/algorithm/string.hpp>
@@ -25,6 +25,11 @@
 
 #include <handlers/mapping_handler.hpp>
 
+/**
+ * @class JSONMappingPlugin
+ * @brief 
+ *
+ */
 class JSONMappingPlugin {
 
   public:
@@ -42,6 +47,12 @@ class JSONMappingPlugin {
     MappingHandler m_mapping_handler;
 };
 
+/**
+ * @brief 
+ *
+ * @param plugin_interface 
+ * @return 
+ */
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     REQUEST_DATA* request_data = plugin_interface->request_data;
@@ -62,6 +73,12 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return 0;
 }
 
+/**
+ * @brief 
+ *
+ * @param plugin_interface 
+ * @return 
+ */
 int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     if (init_) {
         // Free Heap & reset counters if initialised
@@ -70,8 +87,12 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return 0;
 }
 
-//----------------------------------------------------------------------------------------
-// Add functionality here ....
+/**
+ * @brief 
+ *
+ * @param idam_plugin_interface 
+ * @return 
+ */
 int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     DATA_BLOCK* data_block = idam_plugin_interface->data_block;
     REQUEST_DATA* request_data = idam_plugin_interface->request_data;
@@ -107,6 +128,8 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
         free(indices);
         indices = nullptr;
     }
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
 
     std::ofstream my_log_file;
     my_log_file.open("/Users/aparker/UDADevelopment/adam.log",
@@ -121,8 +144,12 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     // return err;
 }
 
-//////////////////////////////////////////////////////////
-/////////////////// template functions
+/**
+ * @brief Plugin entry function
+ *
+ * @param plugin_interface 
+ * @return 
+ */
 int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     //----------------------------------------------------------------------------------------
