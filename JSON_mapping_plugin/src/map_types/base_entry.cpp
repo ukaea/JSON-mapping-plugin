@@ -13,14 +13,14 @@ int ValueEntry::map(
         if (temp_val.is_array()) {
             if (std::all_of(
                     temp_val.begin(), temp_val.end(),
-                    [](const nlohmann::json& el) { return el.is_number(); })) {
+                    [](const nlohmann::json& els) { return els.is_number(); })) {
                 if (temp_val.front().is_number_float()) {
                     auto temp_vec = temp_val.get<std::vector<float>>();
-                    imas_mastu_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                    imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
                         float>(interface->data_block, temp_vec);
                 } else {
                     auto temp_vec = temp_val.get<std::vector<int>>();
-                    imas_mastu_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                    imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
                         int>(interface->data_block, temp_vec);
                 }
             } else {
@@ -32,10 +32,10 @@ int ValueEntry::map(
     } else {
         if (temp_val.is_number()) {
             if (temp_val.is_number_float()) {
-                imas_mastu_plugin::uda_helpers::setReturnDataScalarType<float>(
+                imas_json_plugin::uda_helpers::setReturnDataScalarType<float>(
                     interface->data_block, temp_val.get<float>(), nullptr);
             } else {
-                imas_mastu_plugin::uda_helpers::setReturnDataScalarType<int>(
+                imas_json_plugin::uda_helpers::setReturnDataScalarType<int>(
                     interface->data_block, temp_val.get<int>(), nullptr);
             }
         } else if (temp_val.is_string()) {
@@ -44,7 +44,7 @@ int ValueEntry::map(
                 global_data)};
             try {
                 const int i_str{std::stoi(post_inja_str)};
-                imas_mastu_plugin::uda_helpers::setReturnDataScalarType<int>(
+                imas_json_plugin::uda_helpers::setReturnDataScalarType<int>(
                     interface->data_block, i_str, nullptr);
             } catch (const std::invalid_argument& e) {
                 UDA_LOG(UDA_LOG_DEBUG,

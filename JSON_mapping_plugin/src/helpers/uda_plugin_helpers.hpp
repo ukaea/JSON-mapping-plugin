@@ -11,7 +11,7 @@
 #include <gsl/gsl-lite.hpp>
 
 
-namespace imas_mastu_plugin::uda_helpers {
+namespace imas_json_plugin::uda_helpers {
 
     inline std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP {
         {typeid(int).name(), UDA_TYPE_INT},

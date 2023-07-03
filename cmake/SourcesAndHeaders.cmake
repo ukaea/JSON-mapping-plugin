@@ -5,6 +5,7 @@ set(SOURCES
     src/tmp.cpp
     src/handlers/mapping_handler.cpp
     src/map_types/base_entry.cpp
+    src/helpers/uda_plugin_helpers.cpp
 )
 
 #set(EXE_SOURCES
@@ -16,6 +17,7 @@ set(HEADERS
     src/tmp.hpp
     src/handlers/mapping_handler.hpp
     src/map_types/base_entry.hpp
+    src/helpers/uda_plugin_helpers.hpp
 )
 
 set(INCLUDE_DIRS
