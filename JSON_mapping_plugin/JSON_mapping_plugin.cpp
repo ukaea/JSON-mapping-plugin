@@ -17,14 +17,14 @@
  *
  *--------------------------------------------------------------*/
 #include "JSON_mapping_plugin.h"
+#include "handlers/mapping_handler.hpp"
+#include "map_types/base_entry.hpp"
 
 #include <boost/algorithm/string.hpp>
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
 #include <fstream>
 #include <server/getServerEnvironment.h>
-
-#include <handlers/mapping_handler.hpp>
 
 namespace JSONMapping {
 
@@ -60,7 +60,7 @@ int JPLogger(JPLogLevel log_level, std::string_view log_msg) {
         jp_log_file << timestamp << ":ERROR - ";
         break;
     default:
-        jp_log_file << "UHOH,";
+        jp_log_file << "LOG_LEVEL NOT DEFINED";
     }
 
     jp_log_file << log_msg << std::endl;
@@ -106,14 +106,14 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         reset(plugin_interface);
     }
 
-    m_mapping_handler.init();
     std::string map_dir = getenv("JSON_MAPPING_DIR");
-    if (map_dir.empty()) {
+    if (!map_dir.empty()) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::init : JSON mapping directory not set");
     }
+    m_mapping_handler.init();
 
     return 0;
 }
@@ -139,7 +139,7 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @return
  */
 int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
-    
+
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
     DATA_BLOCK* data_block = idam_plugin_interface->data_block;
@@ -188,28 +188,25 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     // Use first hash of the IDS path as the IDS name
     std::string current_ids{split_elem_vec.front()};
 
-    // const auto& [ids_attrs_map, map_entries] =
-    // m_mapping_handler.read_mappings(current_ids); if (map_entries.empty()) {
-    //     RAISE_PLUGIN_ERROR("ImasMastuPlugin::read: - JSON mapping not loaded,
-    //     no map entries");
-    // }
+    // Load mappings based off current_ids name
+    // Returns a reference to IDS map objects and corresponding globals
+    // Mapping object lifetime owned by mapping_handler
+    const auto& [ids_attrs_map, map_entries] =
+        m_mapping_handler.read_mappings(current_ids);
+    if (map_entries.empty()) {
+        RAISE_PLUGIN_ERROR("ImasMastuPlugin::read: - JSON mapping not loaded,\
+                 no map entries");
+    }
 
-    JSONMapping::JPLogger(JSONMapping::JPLogLevel::INFO,
-                          "Check Logging is working");
+    // Remove IDS name from path and rejoin for hash map key
+    // magnetics/coil/#/current -> coil/#/current
+    split_elem_vec.pop_front();
+    element_str = boost::algorithm::join(split_elem_vec, "/");
 
-    std::ofstream my_log_file;
-    my_log_file.open("/Users/aparker/UDADevelopment/plugin_run/adam.log",
-                     std::ios_base::app);
-    my_log_file << "AJP: Hello World" << std::endl;
-    my_log_file << "Mapping Dir: " << getenv("JSON_MAPPING_DIR") << std::endl;
-    my_log_file << "Element : " << element_str << std::endl;
-    my_log_file << "Current IDS : " << current_ids << std::endl;
-    my_log_file.close();
+    int err = map_entries[element_str]->map(idam_plugin_interface, map_entries,
+                                            ids_attrs_map, SignalType::DATA);
 
-    return setReturnDataIntScalar(data_block, 42, nullptr);
-
-    // const int err{0};
-    // return err;
+    return err;
 }
 
 /**

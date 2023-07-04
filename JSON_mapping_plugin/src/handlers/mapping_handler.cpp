@@ -8,15 +8,14 @@
 // #include <expr_entry.hpp>
 // #include <dim_entry.hpp>
 
-const MappingPair
-MappingHandler::read_mappings(const std::string& request_ids) {
+MappingPair MappingHandler::read_mappings(const std::string& request_ids) {
     // AJP :: Safety check if ids request not in mapping json (and typo
     // obviously)
     return std::make_pair(std::ref(m_ids_attributes[request_ids]),
                           std::ref(m_ids_map_register[request_ids]));
 }
 
-int MappingHandler::set_map_dir(const std::string mapping_dir) {
+int MappingHandler::set_map_dir(const std::string& mapping_dir) {
     m_mapping_dir = mapping_dir;
     return 0;
 }
@@ -43,7 +42,7 @@ int MappingHandler::load_all() {
 
 int MappingHandler::load_globals(const std::string& ids_str) {
 
-    std::string file_path{"/" + m_mapping_dir + "/" + ids_str + "/" +
+    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" +
                           "globals.json"};
 
     std::ifstream globals_file;
@@ -71,8 +70,8 @@ int MappingHandler::load_globals(const std::string& ids_str) {
 
 int MappingHandler::load_mappings(const std::string& ids_str) {
 
-    std::string file_path{m_mapping_dir + "/" + ids_str + "/" + ids_str +
-                          ".json"};
+    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" +
+                          ids_str + ".json"};
 
     std::ifstream map_file;
     map_file.open(file_path);
@@ -88,7 +87,7 @@ int MappingHandler::load_mappings(const std::string& ids_str) {
         }
         map_file.close();
 
-        init_mappings(ids_str, temp_mappings[ids_str]);
+        init_mappings(ids_str, temp_mappings);
 
     } else {
         RAISE_PLUGIN_ERROR(
@@ -183,10 +182,12 @@ int MappingHandler::init_mappings(const std::string& ids_name,
             //                 )));
             //     break;
         default:
-            RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "
-                               "Unrecognised mapping type");
+            break;
+            // RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "
+            // "Unrecognised mapping type");
         }
     }
+
     m_ids_map_register.try_emplace(ids_name, std::move(temp_map_reg));
     UDA_LOG(UDA_LOG_DEBUG, "calling read function \n");
 
