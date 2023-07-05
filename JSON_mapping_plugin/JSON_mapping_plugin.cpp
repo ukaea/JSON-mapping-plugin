@@ -88,7 +88,7 @@ class JSONMappingPlugin {
     int read(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
   private:
-    bool init_ = false;
+    bool m_init = false;
     MappingHandler m_mapping_handler;
 };
 
@@ -101,7 +101,7 @@ class JSONMappingPlugin {
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     REQUEST_DATA* request_data = plugin_interface->request_data;
-    if (!init_ || STR_IEQUALS(request_data->function, "init") ||
+    if (!m_init || STR_IEQUALS(request_data->function, "init") ||
         STR_IEQUALS(request_data->function, "initialise")) {
         reset(plugin_interface);
     }
@@ -125,9 +125,9 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @return
  */
 int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
-    if (init_) {
+    if (m_init) {
         // Free Heap & reset counters if initialised
-        init_ = false;
+        m_init = false;
     }
     return 0;
 }
