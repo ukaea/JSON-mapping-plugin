@@ -30,7 +30,7 @@ namespace JSONMapping {
 
 enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
 
-int JPLogger(JPLogLevel log_level, std::string_view log_msg) {
+int JPLog(JPLogLevel log_level, std::string_view log_msg) {
 
     const ENVIRONMENT* environment = getServerEnvironment();
 
@@ -62,9 +62,9 @@ int JPLogger(JPLogLevel log_level, std::string_view log_msg) {
     default:
         jp_log_file << "LOG_LEVEL NOT DEFINED";
     }
-
     jp_log_file << log_msg << std::endl;
     jp_log_file.close();
+
     return 0;
 };
 
@@ -110,8 +110,10 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     if (!map_dir.empty()) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
+            "ImasMastuPlugin::init: - JSON mapping locations not set");
         RAISE_PLUGIN_ERROR(
-            "JSONMappingPlugin::init : JSON mapping directory not set");
+            "JSONMappingPlugin::init: - JSON mapping locations not set");
     }
     m_mapping_handler.init();
 
@@ -182,6 +184,8 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     std::deque<std::string> split_elem_vec;
     boost::split(split_elem_vec, element_str, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
+            "ImasMastuPlugin::read: - IDS path could not be split");
         RAISE_PLUGIN_ERROR(
             "ImasMastuPlugin::read: - IDS path could not be split");
     }
@@ -193,9 +197,14 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     // Mapping object lifetime owned by mapping_handler
     const auto& [ids_attrs_map, map_entries] =
         m_mapping_handler.read_mappings(current_ids);
+
     if (map_entries.empty()) {
-        RAISE_PLUGIN_ERROR("ImasMastuPlugin::read: - JSON mapping not loaded,\
-                 no map entries");
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
+                "ImasMastuPlugin::read:"
+                " - JSON mapping not loaded, no map entries");
+        RAISE_PLUGIN_ERROR(
+                "ImasMastuPlugin::read:"
+                " - JSON mapping not loaded, no map entries");
     }
 
     // Remove IDS name from path and rejoin for hash map key
