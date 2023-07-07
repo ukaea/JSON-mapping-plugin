@@ -212,8 +212,9 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     split_elem_vec.pop_front();
     element_str = boost::algorithm::join(split_elem_vec, "/");
 
-    int err = map_entries[element_str]->map(idam_plugin_interface, map_entries,
-                                            ids_attrs_map, SignalType::DATA);
+    int err = map_entries[element_str]->map(idam_plugin_interface,
+                                            map_entries, ids_attrs_map,
+                                            SignalType::DEFAULT);
 
     return err;
 }

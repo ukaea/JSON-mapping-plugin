@@ -19,7 +19,7 @@ enum class PluginType { UDA, GEOMETRY };
 NLOHMANN_JSON_SERIALIZE_ENUM(PluginType, {{PluginType::UDA, "UDA"},
                                           {PluginType::GEOMETRY, "GEOMETRY"}});
 
-enum class SignalType { STANDARD, DATA, TIME, ERROR, DIM };
+enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM };
 
 class Mapping {
   public:
