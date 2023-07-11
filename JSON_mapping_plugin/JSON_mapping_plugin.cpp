@@ -24,6 +24,7 @@
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
 #include <fstream>
+#include <ios>
 #include <server/getServerEnvironment.h>
 
 namespace JSONMapping {
@@ -111,7 +112,7 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-            "ImasMastuPlugin::init: - JSON mapping locations not set");
+            "JSONMappingPlugin::init: - JSON mapping locations not set");
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::init: - JSON mapping locations not set");
     }
@@ -185,9 +186,9 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     boost::split(split_elem_vec, element_str, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-            "ImasMastuPlugin::read: - IDS path could not be split");
+            "JSONMappingPlugin::read: - IDS path could not be split");
         RAISE_PLUGIN_ERROR(
-            "ImasMastuPlugin::read: - IDS path could not be split");
+            "JSONMappingPlugin::read: - IDS path could not be split");
     }
     // Use first hash of the IDS path as the IDS name
     std::string current_ids{split_elem_vec.front()};
@@ -200,10 +201,10 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     if (map_entries.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-                "ImasMastuPlugin::read:"
+                "JSONMappingPlugin::read:"
                 " - JSON mapping not loaded, no map entries");
         RAISE_PLUGIN_ERROR(
-                "ImasMastuPlugin::read:"
+                "JSONMappingPlugin::read:"
                 " - JSON mapping not loaded, no map entries");
     }
 
@@ -211,12 +212,19 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     // magnetics/coil/#/current -> coil/#/current
     split_elem_vec.pop_front();
     element_str = boost::algorithm::join(split_elem_vec, "/");
+    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, element_str);
 
-    int err = map_entries[element_str]->map(idam_plugin_interface,
+    if (!map_entries.count(element_str)) { // implicit conversion
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
+                "JSONMappingPlugin::read: - "
+                "IDS path not found in JSON mapping file");
+        return 1;
+    }
+
+
+    return map_entries[element_str]->map(idam_plugin_interface,
                                             map_entries, ids_attrs_map,
                                             SignalType::DEFAULT);
-
-    return err;
 }
 
 /**

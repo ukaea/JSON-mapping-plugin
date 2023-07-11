@@ -48,7 +48,7 @@ class ValueEntry : public Mapping {
 
     int type_deduc_array(DATA_BLOCK* data_block,
         const nlohmann::json& arrValue) const;
-    int type_deduc_scalar(DATA_BLOCK* data_block,
+    int type_deduc_prim(DATA_BLOCK* data_block,
         const nlohmann::json& numValue,
         const nlohmann::json& global_data) const;
 
