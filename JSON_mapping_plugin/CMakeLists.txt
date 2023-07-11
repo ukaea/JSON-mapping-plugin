@@ -8,7 +8,7 @@ set ( CMAKE_CXX17_EXTENSION_COMPILE_OPTION "-std=c++17" )
 set ( CMAKE_CXX_EXTENSIONS ON )
 
 set( CONFIGS
-    configs/json_mapping.cfg
+    config/json_mapping.cfg
 )
 
 set( JSON_LIBNAME JSON_mapping_plugin )
