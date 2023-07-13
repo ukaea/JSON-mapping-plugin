@@ -36,7 +36,7 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
     const ENVIRONMENT* environment = getServerEnvironment();
 
     std::string log_file_name =
-        std::string{environment->logdir} + "plugin_logs/JSON_plugin.log";
+        std::string{environment->logdir} + "plugins.d/logs/JSON_plugin.log";
     std::ofstream jp_log_file;
     jp_log_file.open(log_file_name, std::ios_base::out | std::ios_base::app);
     std::time_t time_now =
@@ -176,7 +176,7 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     std::vector<int> vec_indices(indices, indices + nindices);
     if (nindices == 1 && vec_indices.at(0) == -1) {
         nindices = 0;
-        free(indices);
+        free(indices); // Legacy C UDA, replace if possible
         indices = nullptr;
     }
     //////////////////////////////////////////////////////////////
@@ -220,7 +220,6 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
                 "IDS path not found in JSON mapping file");
         return 1;
     }
-
 
     return map_entries[element_str]->map(idam_plugin_interface,
                                             map_entries, ids_attrs_map,
