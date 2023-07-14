@@ -97,7 +97,7 @@ class JSONMappingPlugin {
         std::vector<int> indices;
         SignalType sig_type;
     };
-    RequestStruct m_request_info;
+    RequestStruct m_request_data;
 
   private:
     bool m_init = false;
@@ -162,7 +162,6 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     REQUEST_DATA* request_data = idam_plugin_interface->request_data;
 
     get_request_info(&request_data->nameValueList);
-
     // std::ofstream my_log_file;
     // my_log_file.open("/Users/aparker/adam3.log", std::ios_base::app);
     // my_log_file << "HEEREREEE2" << std::endl;
@@ -173,7 +172,7 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     data_block->dims = nullptr;
 
     std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, m_request_info.ids_path, boost::is_any_of("/"));
+    boost::split(split_elem_vec, m_request_data.ids_path, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
             "JSONMappingPlugin::read: - IDS path could not be split");
@@ -213,6 +212,13 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     /////////////////////////////////////////////////////////
     /// Set signal type if needed
+    /// default type is obviously default
+    /// if data on the end, data type
+    ////// if map not found, chop data off and try again
+    /// if time on the end, time type
+    ////// if map not found, chop time off and try again, get dim0
+    /// if error contained in string, error type
+    ////// cry 
 
     return map_entries[element_str]->map(idam_plugin_interface,
                                             map_entries, ids_attrs_map);
@@ -256,12 +262,12 @@ int JSONMappingPlugin::get_request_info(NAMEVALUELIST* nvlist) {
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
-    m_request_info.host = "uda2.hpc.l";
-    m_request_info.port = 56565;
-    m_request_info.ids_path = element_str;
-    m_request_info.shot = shot;
-    m_request_info.indices = vec_indices;
-    m_request_info.sig_type = SignalType::DEFAULT;
+    m_request_data.host = "uda2.hpc.l";
+    m_request_data.port = 56565;
+    m_request_data.ids_path = element_str;
+    m_request_data.shot = shot;
+    m_request_data.indices = vec_indices;
+    m_request_data.sig_type = SignalType::DEFAULT;
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
