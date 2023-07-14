@@ -29,7 +29,7 @@ class Mapping {
     map(IDAM_PLUGIN_INTERFACE* interface,
         const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
             entries,
-        const nlohmann::json& global_data, SignalType sig_type) const = 0;
+        const nlohmann::json& global_data) const = 0;
 };
 
 class ValueEntry : public Mapping {
@@ -40,8 +40,7 @@ class ValueEntry : public Mapping {
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
                 entries,
-            const nlohmann::json& global_data,
-            SignalType sig_type) const override;
+            const nlohmann::json& global_data) const override;
 
   private:
     nlohmann::json m_value;

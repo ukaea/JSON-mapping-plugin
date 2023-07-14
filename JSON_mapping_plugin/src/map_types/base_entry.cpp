@@ -15,7 +15,7 @@
 int ValueEntry::map(
         IDAM_PLUGIN_INTERFACE* interface,
         const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-        const nlohmann::json& global_data, const SignalType sig_type) const {
+        const nlohmann::json& global_data) const {
 
     const auto temp_val = m_value;
     if (temp_val.is_discarded() or temp_val.is_binary() or temp_val.is_null()) {
@@ -37,7 +37,7 @@ int ValueEntry::map(
         err = type_deduc_prim(interface->data_block, temp_val, global_data);
     } else {
         UDA_LOG(UDA_LOG_DEBUG, "ValueEntry::map not structured or primitive");
-        return 4;
+        err = 1;
     }
 
     return err;

@@ -88,9 +88,22 @@ class JSONMappingPlugin {
     int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int read(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
+  protected:
+    struct RequestStruct {
+        std::string host;
+        int port;
+        int shot;
+        std::string ids_path;
+        std::vector<int> indices;
+        SignalType sig_type;
+    };
+    RequestStruct m_request_info;
+
   private:
     bool m_init = false;
     MappingHandler m_mapping_handler;
+
+    int get_request_info(NAMEVALUELIST* nvlist);
 };
 
 /**
@@ -148,48 +161,26 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     DATA_BLOCK* data_block = idam_plugin_interface->data_block;
     REQUEST_DATA* request_data = idam_plugin_interface->request_data;
 
+    get_request_info(&request_data->nameValueList);
+
+    // std::ofstream my_log_file;
+    // my_log_file.open("/Users/aparker/adam3.log", std::ios_base::app);
+    // my_log_file << "HEEREREEE2" << std::endl;
+    // my_log_file.close();
+
     initDataBlock(data_block);
     data_block->rank = 0;
     data_block->dims = nullptr;
 
-    //////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////
-    const char* element{nullptr};
-    const char* IDS_version{nullptr};
-    const char* experiment{nullptr};
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, element);
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, IDS_version);
-    FIND_STRING_VALUE(request_data->nameValueList, experiment);
-    std::string element_str{element};
-
-    int run{0};
-    int shot{0};
-    int dtype{0};
-    FIND_INT_VALUE(request_data->nameValueList, run);
-    FIND_REQUIRED_INT_VALUE(request_data->nameValueList, shot);
-    FIND_REQUIRED_INT_VALUE(request_data->nameValueList, dtype);
-
-    int* indices{nullptr};
-    size_t nindices{0};
-    FIND_REQUIRED_INT_ARRAY(request_data->nameValueList, indices);
-    // Convert int* into std::vector<int>
-    std::vector<int> vec_indices(indices, indices + nindices);
-    if (nindices == 1 && vec_indices.at(0) == -1) {
-        nindices = 0;
-        free(indices); // Legacy C UDA, replace if possible
-        indices = nullptr;
-    }
-    //////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////
-
     std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, element_str, boost::is_any_of("/"));
+    boost::split(split_elem_vec, m_request_info.ids_path, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
             "JSONMappingPlugin::read: - IDS path could not be split");
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::read: - IDS path could not be split");
     }
+
     // Use first hash of the IDS path as the IDS name
     std::string current_ids{split_elem_vec.front()};
 
@@ -207,11 +198,10 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
                 "JSONMappingPlugin::read:"
                 " - JSON mapping not loaded, no map entries");
     }
-
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current
     split_elem_vec.pop_front();
-    element_str = boost::algorithm::join(split_elem_vec, "/");
+    std::string element_str = boost::algorithm::join(split_elem_vec, "/");
     JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, element_str);
 
     if (!map_entries.count(element_str)) { // implicit conversion
@@ -221,9 +211,61 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
         return 1;
     }
 
+    /////////////////////////////////////////////////////////
+    /// Set signal type if needed
+
     return map_entries[element_str]->map(idam_plugin_interface,
-                                            map_entries, ids_attrs_map,
-                                            SignalType::DEFAULT);
+                                            map_entries, ids_attrs_map);
+}
+
+/**
+ * @brief
+ *
+ * @param nvlist
+ * @return
+ */
+int JSONMappingPlugin::get_request_info(NAMEVALUELIST* nvlist) {
+
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+    const char* element{nullptr};
+    const char* IDS_version{nullptr};
+    const char* experiment{nullptr};
+    FIND_REQUIRED_STRING_VALUE(*nvlist, element);
+    FIND_REQUIRED_STRING_VALUE(*nvlist, IDS_version);
+    FIND_STRING_VALUE(*nvlist, experiment);
+    std::string element_str{element};
+
+    int run{0};
+    int shot{0};
+    int dtype{0};
+    FIND_INT_VALUE(*nvlist, run);
+    FIND_REQUIRED_INT_VALUE(*nvlist, shot);
+    FIND_REQUIRED_INT_VALUE(*nvlist, dtype);
+
+    int* indices{nullptr};
+    size_t nindices{0};
+    FIND_REQUIRED_INT_ARRAY(*nvlist, indices);
+    // Convert int* into std::vector<int>
+    std::vector<int> vec_indices(indices, indices + nindices);
+    if (nindices == 1 && vec_indices.at(0) == -1) {
+        nindices = 0;
+        free(indices); // Legacy C UDA, replace if possible
+        indices = nullptr;
+    }
+
+    // Set request info
+    // Replace hardcoded values after IMAS-plugin request change
+    m_request_info.host = "uda2.hpc.l";
+    m_request_info.port = 56565;
+    m_request_info.ids_path = element_str;
+    m_request_info.shot = shot;
+    m_request_info.indices = vec_indices;
+    m_request_info.sig_type = SignalType::DEFAULT;
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    return 0;
 }
 
 /**
