@@ -25,11 +25,10 @@ class Mapping {
   public:
     Mapping() = default;
     virtual ~Mapping() = default;
-    virtual int
-    map(IDAM_PLUGIN_INTERFACE* interface,
-        const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
-            entries,
-        const nlohmann::json& global_data) const = 0;
+    virtual int map(IDAM_PLUGIN_INTERFACE* interface,
+                    const std::unordered_map<std::string,
+                                             std::unique_ptr<Mapping>>& entries,
+                    const nlohmann::json& global_data) const = 0;
 };
 
 class ValueEntry : public Mapping {
@@ -46,9 +45,7 @@ class ValueEntry : public Mapping {
     nlohmann::json m_value;
 
     int type_deduc_array(DATA_BLOCK* data_block,
-        const nlohmann::json& arrValue) const;
-    int type_deduc_prim(DATA_BLOCK* data_block,
-        const nlohmann::json& numValue,
-        const nlohmann::json& global_data) const;
-
+                         const nlohmann::json& arrValue) const;
+    int type_deduc_prim(DATA_BLOCK* data_block, const nlohmann::json& numValue,
+                        const nlohmann::json& global_data) const;
 };

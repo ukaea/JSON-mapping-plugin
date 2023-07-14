@@ -98,6 +98,7 @@ class JSONMappingPlugin {
         SignalType sig_type;
     };
     RequestStruct m_request_data;
+    // AJP: add cache here?
 
   private:
     bool m_init = false;
@@ -124,7 +125,8 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     if (!map_dir.empty()) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
+        JSONMapping::JPLog(
+            JSONMapping::JPLogLevel::ERROR,
             "JSONMappingPlugin::init: - JSON mapping locations not set");
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::init: - JSON mapping locations not set");
@@ -172,9 +174,11 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     data_block->dims = nullptr;
 
     std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, m_request_data.ids_path, boost::is_any_of("/"));
+    boost::split(split_elem_vec, m_request_data.ids_path,
+                 boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
+        JSONMapping::JPLog(
+            JSONMapping::JPLogLevel::ERROR,
             "JSONMappingPlugin::get: - IDS path could not be split");
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::get: - IDS path could not be split");
@@ -191,11 +195,10 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     if (map_entries.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-                "JSONMappingPlugin::get:"
-                " - JSON mapping not loaded, no map entries");
-        RAISE_PLUGIN_ERROR(
-                "JSONMappingPlugin::get:"
-                " - JSON mapping not loaded, no map entries");
+                           "JSONMappingPlugin::get:"
+                           " - JSON mapping not loaded, no map entries");
+        RAISE_PLUGIN_ERROR("JSONMappingPlugin::get:"
+                           " - JSON mapping not loaded, no map entries");
     }
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current
@@ -205,8 +208,8 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     if (!map_entries.count(element_str)) { // implicit conversion
         JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
-                "JSONMappingPlugin::get: - "
-                "IDS path not found in JSON mapping file");
+                           "JSONMappingPlugin::get: - "
+                           "IDS path not found in JSON mapping file");
         return 1;
     }
 
@@ -218,10 +221,10 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     /// if time on the end, time type
     ////// if map not found, chop time off and try again, get dim0
     /// if error contained in string, error type
-    ////// cry 
+    ////// cry
 
-    return map_entries[element_str]->map(idam_plugin_interface,
-                                            map_entries, ids_attrs_map);
+    return map_entries[element_str]->map(idam_plugin_interface, map_entries,
+                                         ids_attrs_map);
 }
 
 /**
