@@ -154,7 +154,7 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param idam_plugin_interface
  * @return
  */
-int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
+int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
@@ -175,9 +175,9 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     boost::split(split_elem_vec, m_request_data.ids_path, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-            "JSONMappingPlugin::read: - IDS path could not be split");
+            "JSONMappingPlugin::get: - IDS path could not be split");
         RAISE_PLUGIN_ERROR(
-            "JSONMappingPlugin::read: - IDS path could not be split");
+            "JSONMappingPlugin::get: - IDS path could not be split");
     }
 
     // Use first hash of the IDS path as the IDS name
@@ -191,10 +191,10 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     if (map_entries.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-                "JSONMappingPlugin::read:"
+                "JSONMappingPlugin::get:"
                 " - JSON mapping not loaded, no map entries");
         RAISE_PLUGIN_ERROR(
-                "JSONMappingPlugin::read:"
+                "JSONMappingPlugin::get:"
                 " - JSON mapping not loaded, no map entries");
     }
     // Remove IDS name from path and rejoin for hash map key
@@ -205,7 +205,7 @@ int JSONMappingPlugin::read(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
 
     if (!map_entries.count(element_str)) { // implicit conversion
         JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
-                "JSONMappingPlugin::read: - "
+                "JSONMappingPlugin::get: - "
                 "IDS path not found in JSON mapping file");
         return 1;
     }
