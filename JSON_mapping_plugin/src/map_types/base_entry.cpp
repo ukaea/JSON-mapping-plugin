@@ -1,7 +1,48 @@
 #include "base_entry.hpp"
 
-#include <clientserver/udaStructs.h>
 #include <inja/inja.hpp>
+
+/**
+ * @brief
+ *
+ * @param nvlist
+ * @return
+ */
+int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
+
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+    int run{0};
+    int shot{0};
+    int dtype{0};
+    FIND_INT_VALUE(*nvlist, run);
+    FIND_REQUIRED_INT_VALUE(*nvlist, shot);
+    FIND_REQUIRED_INT_VALUE(*nvlist, dtype);
+
+    int* indices{nullptr};
+    size_t nindices{0};
+    FIND_REQUIRED_INT_ARRAY(*nvlist, indices);
+    // Convert int* into std::vector<int>
+    std::vector<int> vec_indices(indices, indices + nindices);
+    if (nindices == 1 && vec_indices.at(0) == -1) {
+        nindices = 0;
+        free(indices); // Legacy C UDA, replace if possible
+        indices = nullptr;
+    }
+
+    // Set request info
+    // Replace hardcoded values after IMAS-plugin request change
+    m_request_data.host = "uda2.hpc.l";
+    m_request_data.port = 56565;
+    // m_request_data.ids_path = element_str;
+    m_request_data.shot = shot;
+    m_request_data.indices = vec_indices;
+    // m_request_data.sig_type = SignalType::DEFAULT;
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    return 0;
+}
 
 /**
  * @brief

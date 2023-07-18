@@ -1,5 +1,6 @@
 #pragma once
 
+#include <clientserver/udaStructs.h>
 #include <helpers/uda_plugin_helpers.hpp>
 #include <nlohmann/json.hpp>
 #include <plugins/pluginStructs.h>
@@ -29,6 +30,17 @@ class Mapping {
                     const std::unordered_map<std::string,
                                              std::unique_ptr<Mapping>>& entries,
                     const nlohmann::json& global_data) const = 0;
+    int set_current_request_data(NAMEVALUELIST* nvlist);
+
+  protected:
+    struct RequestStruct {
+        std::string host;
+        int port;
+        int shot;
+        std::vector<int> indices;
+        // SignalType sig_type;
+    };
+    RequestStruct m_request_data;
 };
 
 class ValueEntry : public Mapping {

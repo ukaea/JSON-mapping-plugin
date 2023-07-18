@@ -1,7 +1,7 @@
 /*---------------------------------------------------------------
  * v0.1 JSON Mappings Plugin:
  *
- * Input Arguments:	IDAM_PLUGIN_INTERFACE *idam_plugin_interface
+ * Input Arguments:	IDAM_PLUGIN_INTERFACE *plugin_interface
  *
  * Returns:		0 if the plugin functionality was successful
  *			    otherwise a Error Code is returned
@@ -24,7 +24,6 @@
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
 #include <fstream>
-#include <ios>
 #include <server/getServerEnvironment.h>
 
 namespace JSONMapping {
@@ -86,25 +85,11 @@ class JSONMappingPlugin {
     int build_date(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int default_method(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int read(IDAM_PLUGIN_INTERFACE* plugin_interface);
-
-  protected:
-    struct RequestStruct {
-        std::string host;
-        int port;
-        int shot;
-        std::string ids_path;
-        std::vector<int> indices;
-        SignalType sig_type;
-    };
-    RequestStruct m_request_data;
-    // AJP: add cache here?
+    int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
   private:
     bool m_init = false;
     MappingHandler m_mapping_handler;
-
-    int get_request_info(NAMEVALUELIST* nvlist);
 };
 
 /**
@@ -153,28 +138,32 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 /**
  * @brief
  *
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
+int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
-    DATA_BLOCK* data_block = idam_plugin_interface->data_block;
-    REQUEST_DATA* request_data = idam_plugin_interface->request_data;
+    DATA_BLOCK* data_block = plugin_interface->data_block;
+    REQUEST_DATA* request_data = plugin_interface->request_data;
 
-    get_request_info(&request_data->nameValueList);
-    // std::ofstream my_log_file;
-    // my_log_file.open("/Users/aparker/adam3.log", std::ios_base::app);
-    // my_log_file << "HEEREREEE2" << std::endl;
-    // my_log_file.close();
 
     initDataBlock(data_block);
     data_block->rank = 0;
     data_block->dims = nullptr;
 
+    // TODO: put into plugin relevant structure
+    const char* IDS_version{nullptr};
+    const char* experiment{nullptr};
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, IDS_version);
+    FIND_STRING_VALUE(request_data->nameValueList, experiment);
+    const char* element{nullptr};
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, element);
+    std::string ids_path{element};
+
     std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, m_request_data.ids_path,
+    boost::split(split_elem_vec, ids_path,
                  boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(
@@ -203,78 +192,21 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current
     split_elem_vec.pop_front();
-    std::string element_str = boost::algorithm::join(split_elem_vec, "/");
-    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, element_str);
+    std::string map_path = boost::algorithm::join(split_elem_vec, "/");
+    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
 
-    if (!map_entries.count(element_str)) { // implicit conversion
+    if (!map_entries.count(map_path)) { // implicit conversion
         JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
                            "JSONMappingPlugin::get: - "
                            "IDS path not found in JSON mapping file");
         return 1;
     }
 
-    /////////////////////////////////////////////////////////
-    /// Set signal type if needed
-    /// default type is obviously default
-    /// if data on the end, data type
-    ////// if map not found, chop data off and try again
-    /// if time on the end, time type
-    ////// if map not found, chop time off and try again, get dim0
-    /// if error contained in string, error type
-    ////// cry
+    // set signal_type first
+    map_entries[map_path]->set_current_request_data(&request_data->nameValueList);
 
-    return map_entries[element_str]->map(idam_plugin_interface, map_entries,
+    return map_entries[map_path]->map(plugin_interface, map_entries,
                                          ids_attrs_map);
-}
-
-/**
- * @brief
- *
- * @param nvlist
- * @return
- */
-int JSONMappingPlugin::get_request_info(NAMEVALUELIST* nvlist) {
-
-    //////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////
-    const char* element{nullptr};
-    const char* IDS_version{nullptr};
-    const char* experiment{nullptr};
-    FIND_REQUIRED_STRING_VALUE(*nvlist, element);
-    FIND_REQUIRED_STRING_VALUE(*nvlist, IDS_version);
-    FIND_STRING_VALUE(*nvlist, experiment);
-    std::string element_str{element};
-
-    int run{0};
-    int shot{0};
-    int dtype{0};
-    FIND_INT_VALUE(*nvlist, run);
-    FIND_REQUIRED_INT_VALUE(*nvlist, shot);
-    FIND_REQUIRED_INT_VALUE(*nvlist, dtype);
-
-    int* indices{nullptr};
-    size_t nindices{0};
-    FIND_REQUIRED_INT_ARRAY(*nvlist, indices);
-    // Convert int* into std::vector<int>
-    std::vector<int> vec_indices(indices, indices + nindices);
-    if (nindices == 1 && vec_indices.at(0) == -1) {
-        nindices = 0;
-        free(indices); // Legacy C UDA, replace if possible
-        indices = nullptr;
-    }
-
-    // Set request info
-    // Replace hardcoded values after IMAS-plugin request change
-    m_request_data.host = "uda2.hpc.l";
-    m_request_data.port = 56565;
-    m_request_data.ids_path = element_str;
-    m_request_data.shot = shot;
-    m_request_data.indices = vec_indices;
-    m_request_data.sig_type = SignalType::DEFAULT;
-    //////////////////////////////////////////////////////////////
-    //////////////////////////////////////////////////////////////
-
-    return 0;
 }
 
 /**
@@ -325,8 +257,11 @@ int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         } else if (STR_IEQUALS(plugin_func, "maxinterfaceversion")) {
             return plugin.max_interface_version(plugin_interface);
         } else if (STR_IEQUALS(plugin_func, "read")) {
-            UDA_LOG(UDA_LOG_DEBUG, "calling read function \n");
-            return plugin.read(plugin_interface);
+            UDA_LOG(UDA_LOG_DEBUG, "calling get function (read given) \n");
+            return plugin.get(plugin_interface);
+        } else if (STR_IEQUALS(plugin_func, "get")) {
+            UDA_LOG(UDA_LOG_DEBUG, "calling get function \n");
+            return plugin.get(plugin_interface);
         } else if (STR_IEQUALS(plugin_func, "close")) {
             UDA_LOG(UDA_LOG_DEBUG, "calling close function \n");
             return 0;
@@ -339,58 +274,58 @@ int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 }
 /**
  * Help: A Description of library functionality
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::help(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
+int JSONMappingPlugin::help(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     const char* help = "\nJSONMappingPlugin: Add Functions Names, Syntax, and "
                        "Descriptions\n\n";
     const char* desc = "templatePlugin: help = description of this plugin";
 
-    return setReturnDataString(idam_plugin_interface->data_block, help, desc);
+    return setReturnDataString(plugin_interface->data_block, help, desc);
 }
 
 /**
  * Plugin version
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
-    return setReturnDataIntScalar(idam_plugin_interface->data_block,
+int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+    return setReturnDataIntScalar(plugin_interface->data_block,
                                   THISPLUGIN_VERSION, "Plugin version number");
 }
 
 /**
  * Plugin Build Date
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
 int JSONMappingPlugin::build_date(
-    IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
-    return setReturnDataString(idam_plugin_interface->data_block, __DATE__,
+    IDAM_PLUGIN_INTERFACE* plugin_interface) {
+    return setReturnDataString(plugin_interface->data_block, __DATE__,
                                "Plugin build date");
 }
 
 /**
  * Plugin Default Method
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
 int JSONMappingPlugin::default_method(
-    IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
-    return setReturnDataString(idam_plugin_interface->data_block,
+    IDAM_PLUGIN_INTERFACE* plugin_interface) {
+    return setReturnDataString(plugin_interface->data_block,
                                THISPLUGIN_DEFAULT_METHOD,
                                "Plugin default method");
 }
 
 /**
  * Plugin Maximum Interface Version
- * @param idam_plugin_interface
+ * @param plugin_interface
  * @return
  */
 int JSONMappingPlugin::max_interface_version(
-    IDAM_PLUGIN_INTERFACE* idam_plugin_interface) {
-    return setReturnDataIntScalar(idam_plugin_interface->data_block,
+    IDAM_PLUGIN_INTERFACE* plugin_interface) {
+    return setReturnDataIntScalar(plugin_interface->data_block,
                                   THISPLUGIN_MAX_INTERFACE_VERSION,
                                   "Maximum Interface Version");
 }

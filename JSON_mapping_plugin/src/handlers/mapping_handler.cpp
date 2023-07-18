@@ -2,7 +2,7 @@
 
 #include <inja/inja.hpp>
 
-// #include <map_entry.hpp>
+#include "map_types/map_entry.hpp"
 // #include <offset_entry.hpp>
 // #include <scale_entry.hpp>
 // #include <expr_entry.hpp>
@@ -108,15 +108,17 @@ int MappingHandler::init_mappings(const std::string& ids_name,
             temp_map_reg.try_emplace(
                 key, std::make_unique<ValueEntry>(ValueEntry(value["VALUE"])));
             break;
-            // case MapTransfos::MAP :
-            //     if(value.contains("VAR")) value["VAR"].get_to(var);
-            //     temp_map_reg.try_emplace(key,
-            //             std::make_unique<MapEntry>( MapEntry(
-            //                     value["PLUGIN"].get<PluginType>(),
-            //                     value["KEY"].get<std::string>(),
-            //                     var
-            //                 )));
-            //     break;
+        case MapTransfos::MAP :
+            if(value.contains("VAR") and !value["VAR"].is_null()) {
+                var = value["VAR"].get<std::string>();
+            }
+            temp_map_reg.try_emplace(key,
+                    std::make_unique<MapEntry>( MapEntry(
+                            value["PLUGIN"].get<PluginType>(),
+                            value["KEY"].get<std::string>(),
+                            var
+                        )));
+            break;
             // case MapTransfos::OFFSET :
             //     if(value.contains("VAR")) value["VAR"].get_to(var);
             //     float temp_float_offset;
