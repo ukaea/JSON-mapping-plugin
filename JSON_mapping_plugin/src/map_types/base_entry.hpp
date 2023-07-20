@@ -15,12 +15,13 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MapTransfos, {{MapTransfos::VALUE, "VALUE"},
                                            {MapTransfos::EXPR, "EXPR"},
                                            {MapTransfos::DIM, "DIMENSION"}});
 
-enum class PluginType { UDA, GEOMETRY };
+enum class PluginType { UDA, GEOMETRY, JSONReader };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PluginType, {{PluginType::UDA, "UDA"},
-                                          {PluginType::GEOMETRY, "GEOMETRY"}});
+                                          {PluginType::GEOMETRY, "GEOMETRY"},
+                                          {PluginType::JSONReader, "JSONReader"}});
 
-enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM };
+enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM, INVALID };
 
 class Mapping {
   public:
@@ -31,6 +32,10 @@ class Mapping {
                                              std::unique_ptr<Mapping>>& entries,
                     const nlohmann::json& global_data) const = 0;
     int set_current_request_data(NAMEVALUELIST* nvlist);
+    int set_sig_type(SignalType sig_type) {
+        m_request_data.sig_type = sig_type;
+        return 0;
+    };
 
   protected:
     struct RequestStruct {
@@ -38,7 +43,7 @@ class Mapping {
         int port;
         int shot;
         std::vector<int> indices;
-        // SignalType sig_type;
+        SignalType sig_type;
     };
     RequestStruct m_request_data;
 };

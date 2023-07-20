@@ -1,6 +1,7 @@
 #include "base_entry.hpp"
 
 #include <inja/inja.hpp>
+#include <string_view>
 
 /**
  * @brief
@@ -34,10 +35,9 @@ int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
     // Replace hardcoded values after IMAS-plugin request change
     m_request_data.host = "uda2.hpc.l";
     m_request_data.port = 56565;
-    // m_request_data.ids_path = element_str;
     m_request_data.shot = shot;
     m_request_data.indices = vec_indices;
-    // m_request_data.sig_type = SignalType::DEFAULT;
+    m_request_data.sig_type = SignalType::DEFAULT;
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
@@ -66,11 +66,13 @@ int ValueEntry::map(
 
     int err{0};
     if (temp_val.is_array()) {
-
+        // Check all members of array are numbers
+        // (Add array of strings if necessary)
         bool all_number = std::all_of(
             temp_val.begin(), temp_val.end(),
             [](const nlohmann::json& els) { return els.is_number(); });
 
+        // deduce type if true
         err =
             all_number ? type_deduc_array(interface->data_block, temp_val) : 1;
 

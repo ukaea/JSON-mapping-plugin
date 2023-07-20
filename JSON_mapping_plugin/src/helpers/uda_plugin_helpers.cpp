@@ -1,6 +1,6 @@
 #include <helpers/uda_plugin_helpers.hpp>
 
-namespace imas_mastu_plugin::uda_helpers {
+namespace imas_json_plugin::uda_helpers {
 
 int setReturnTimeArray(DATA_BLOCK* data_block) {
 

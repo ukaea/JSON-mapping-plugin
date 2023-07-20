@@ -90,8 +90,8 @@ class JSONMappingPlugin {
   private:
     bool m_init = false;
     MappingHandler m_mapping_handler;
+    SignalType deduc_sig_type(std::string_view element_back_str);
 };
-
 /**
  * @brief
  *
@@ -133,6 +133,29 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         m_init = false;
     }
     return 0;
+}
+
+
+/**
+ * @brief
+ *
+ * @param element_back_str
+ * @return SignalType
+ */
+SignalType JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
+
+    SignalType sig_type{SignalType::DEFAULT};
+    if (element_back_str.empty()) {
+        UDA_LOG(UDA_LOG_DEBUG, "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
+        sig_type = SignalType::INVALID;
+    } else if (!element_back_str.compare("data")) {
+        sig_type = SignalType::DATA;
+    } else if (!element_back_str.compare("time") ) {
+        sig_type = SignalType::TIME;
+    } else if ( element_back_str.find("error") != std::string::npos ) {
+        sig_type = SignalType::ERROR;
+    }
+    return sig_type;
 }
 
 /**
@@ -199,11 +222,15 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
                            "JSONMappingPlugin::get: - "
                            "IDS path not found in JSON mapping file");
-        return 1;
+        return 1; // Move on, no mapping found
     }
 
-    // set signal_type first
+    // set signal_type
+    const auto sig_type = deduc_sig_type(split_elem_vec.back());
+    if (sig_type == SignalType::INVALID) { return 1; }
+
     map_entries[map_path]->set_current_request_data(&request_data->nameValueList);
+    map_entries[map_path]->set_sig_type(sig_type);
 
     return map_entries[map_path]->map(plugin_interface, map_entries,
                                          ids_attrs_map);
