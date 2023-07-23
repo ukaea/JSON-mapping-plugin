@@ -17,9 +17,10 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MapTransfos, {{MapTransfos::VALUE, "VALUE"},
 
 enum class PluginType { UDA, GEOMETRY, JSONReader };
 
-NLOHMANN_JSON_SERIALIZE_ENUM(PluginType, {{PluginType::UDA, "UDA"},
-                                          {PluginType::GEOMETRY, "GEOMETRY"},
-                                          {PluginType::JSONReader, "JSONReader"}});
+NLOHMANN_JSON_SERIALIZE_ENUM(PluginType,
+                             {{PluginType::UDA, "UDA"},
+                              {PluginType::GEOMETRY, "GEOMETRY"},
+                              {PluginType::JSONReader, "JSONReader"}});
 
 enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM, INVALID };
 

@@ -108,16 +108,14 @@ int MappingHandler::init_mappings(const std::string& ids_name,
             temp_map_reg.try_emplace(
                 key, std::make_unique<ValueEntry>(ValueEntry(value["VALUE"])));
             break;
-        case MapTransfos::MAP :
-            if(value.contains("VAR") and !value["VAR"].is_null()) {
+        case MapTransfos::MAP:
+            if (value.contains("VAR") and !value["VAR"].is_null()) {
                 var = value["VAR"].get<std::string>();
             }
-            temp_map_reg.try_emplace(key,
-                    std::make_unique<MapEntry>( MapEntry(
-                            value["PLUGIN"].get<PluginType>(),
-                            value["KEY"].get<std::string>(),
-                            var
-                        )));
+            temp_map_reg.try_emplace(
+                key, std::make_unique<MapEntry>(
+                         MapEntry(value["PLUGIN"].get<PluginType>(),
+                                  value["KEY"].get<std::string>(), var)));
             break;
             // case MapTransfos::OFFSET :
             //     if(value.contains("VAR")) value["VAR"].get_to(var);

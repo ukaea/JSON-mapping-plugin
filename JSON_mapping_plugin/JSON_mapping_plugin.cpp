@@ -135,24 +135,25 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return 0;
 }
 
-
 /**
  * @brief
  *
  * @param element_back_str
  * @return SignalType
  */
-SignalType JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
+SignalType
+JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
 
     SignalType sig_type{SignalType::DEFAULT};
     if (element_back_str.empty()) {
-        UDA_LOG(UDA_LOG_DEBUG, "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
+        UDA_LOG(UDA_LOG_DEBUG,
+                "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
         sig_type = SignalType::INVALID;
     } else if (!element_back_str.compare("data")) {
         sig_type = SignalType::DATA;
-    } else if (!element_back_str.compare("time") ) {
+    } else if (!element_back_str.compare("time")) {
         sig_type = SignalType::TIME;
-    } else if ( element_back_str.find("error") != std::string::npos ) {
+    } else if (element_back_str.find("error") != std::string::npos) {
         sig_type = SignalType::ERROR;
     }
     return sig_type;
@@ -171,7 +172,6 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     DATA_BLOCK* data_block = plugin_interface->data_block;
     REQUEST_DATA* request_data = plugin_interface->request_data;
 
-
     initDataBlock(data_block);
     data_block->rank = 0;
     data_block->dims = nullptr;
@@ -186,8 +186,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     std::string ids_path{element};
 
     std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, ids_path,
-                 boost::is_any_of("/"));
+    boost::split(split_elem_vec, ids_path, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
         JSONMapping::JPLog(
             JSONMapping::JPLogLevel::ERROR,
@@ -227,13 +226,16 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     // set signal_type
     const auto sig_type = deduc_sig_type(split_elem_vec.back());
-    if (sig_type == SignalType::INVALID) { return 1; }
+    if (sig_type == SignalType::INVALID) {
+        return 1;
+    }
 
-    map_entries[map_path]->set_current_request_data(&request_data->nameValueList);
+    map_entries[map_path]->set_current_request_data(
+        &request_data->nameValueList);
     map_entries[map_path]->set_sig_type(sig_type);
 
     return map_entries[map_path]->map(plugin_interface, map_entries,
-                                         ids_attrs_map);
+                                      ids_attrs_map);
 }
 
 /**
@@ -327,8 +329,7 @@ int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::build_date(
-    IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::build_date(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return setReturnDataString(plugin_interface->data_block, __DATE__,
                                "Plugin build date");
 }
@@ -338,8 +339,7 @@ int JSONMappingPlugin::build_date(
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::default_method(
-    IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::default_method(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return setReturnDataString(plugin_interface->data_block,
                                THISPLUGIN_DEFAULT_METHOD,
                                "Plugin default method");

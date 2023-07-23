@@ -32,4 +32,4 @@ int setReturnTimeArray(DATA_BLOCK* data_block) {
     return 0;
 };
 
-}; // namespace imas_mastu_plugin::uda_helpers
+}; // namespace imas_json_plugin::uda_helpers
