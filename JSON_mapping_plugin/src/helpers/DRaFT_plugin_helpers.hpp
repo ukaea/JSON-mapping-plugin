@@ -66,18 +66,20 @@ int set_return_data() {
 int get_data(DATA_BLOCK* data_block, std::string_view key, std::string_view var,
              int shot) {
 
-    // int err{0};
-    if (key.find("/APC/plasma_current") != std::string::npos) { // temporary plasma_current test
+    int err{1};
+    if (key.find("/APC/plasma_current") !=
+        std::string::npos) { // temporary plasma_current test
         auto local_json = read_json_data(key, shot);
         // std::ofstream my_log_file;
-        // my_log_file.open("/Users/aparker/UDADevelopment/adam2.log", std::ios_base::app);
-        // my_log_file << key << std::endl;
-        // my_log_file << local_json.dump(4) << std::endl;
-        // my_log_file.close();
-        auto vec_values = local_json[var].get<std::vector<float>>();
-        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<float>(
-            data_block, vec_values);
+        // my_log_file.open("/Users/aparker/UDADevelopment/adam2.log",
+        // std::ios_base::app); my_log_file << key << std::endl; my_log_file <<
+        // local_json.dump(4) << std::endl; my_log_file.close();
+        if (!var.empty()) {
+            auto vec_values = local_json[var].get<std::vector<float>>();
+            err = imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                float>(data_block, vec_values);
+        }
     }
-    return 0;
+    return err;
 }
 } // namespace DRaFT_plugin_helpers

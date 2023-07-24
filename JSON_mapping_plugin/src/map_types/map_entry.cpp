@@ -20,7 +20,8 @@ std::string MapEntry::get_request(const nlohmann::json& json_globals) const {
         request =
             (boost::format("UDA::get(signal=%s, source=%d, host=%s, port=%d)") %
              post_inja % m_request_data.shot % m_request_data.host %
-             m_request_data.port).str();
+             m_request_data.port)
+                .str();
 
     } else if (m_plugin == PluginType::GEOMETRY) {
 
@@ -34,7 +35,6 @@ std::string MapEntry::get_request(const nlohmann::json& json_globals) const {
 
         // Return post_inja key, JSONReader --> code call, rather than plugin
         request = post_inja;
-
     }
 
     UDA_LOG(UDA_LOG_DEBUG, "AJP Request : %s\n", request.c_str());
@@ -70,8 +70,9 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
             break;
         case SignalType::DIM:
             // if (!callPlugin(interface->pluginList, request.c_str(),
-                            // interface)) {
-                // AJP: setReturnDataScalar<int>(interface, interface->data_block->data_n, nullptr);
+            // interface)) {
+            // AJP: setReturnDataScalar<int>(interface,
+            // interface->data_block->data_n, nullptr);
             // }
             break;
         default:
@@ -87,7 +88,6 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
         err = DRaFT_plugin_helpers::get_data(interface->data_block, request,
                                              m_var.value_or(""),
                                              m_request_data.shot);
-
     }
 
     return err;
