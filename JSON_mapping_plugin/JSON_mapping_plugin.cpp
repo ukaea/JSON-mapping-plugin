@@ -217,17 +217,23 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     std::string map_path = boost::algorithm::join(split_elem_vec, "/");
     JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
 
-    if (!map_entries.count(map_path)) { // implicit conversion
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
-                           "JSONMappingPlugin::get: - "
-                           "IDS path not found in JSON mapping file");
-        return 1; // Move on, no mapping found
-    }
-
     // Deduce signal_type
     const auto sig_type = deduc_sig_type(split_elem_vec.back());
     if (sig_type == SignalType::INVALID) {
         return 1; // Don't throw, go gentle into that good night
+    }
+
+    if (!map_entries.count(map_path)) { // implicit conversion
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
+                           "JSONMappingPlugin::get: - "
+                           "IDS path not found in JSON mapping file");
+        if (sig_type == SignalType::TIME) {
+            split_elem_vec.pop_back();
+            map_path = boost::algorithm::join(split_elem_vec, "/");
+            if (!map_entries.count(map_path)) { // implicit conversion
+                return 1;                       // Move on, no mapping found
+            }
+        }
     }
 
     // Find/Set request data such as host, port, shot,

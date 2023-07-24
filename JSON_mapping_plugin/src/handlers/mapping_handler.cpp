@@ -1,10 +1,11 @@
 #include "mapping_handler.hpp"
 
 #include <inja/inja.hpp>
+#include <logging/logging.h>
 
 #include "map_types/map_entry.hpp"
-// #include <offset_entry.hpp>
-// #include <scale_entry.hpp>
+#include "map_types/offset_entry.hpp"
+#include "map_types/scale_entry.hpp"
 // #include <expr_entry.hpp>
 // #include <dim_entry.hpp>
 
@@ -104,11 +105,12 @@ int MappingHandler::init_mappings(const std::string& ids_name,
     for (const auto& [key, value] : data.items()) {
 
         switch (value["MAP_TYPE"].get<MapTransfos>()) {
-        case MapTransfos::VALUE:
+        case MapTransfos::VALUE: {
             temp_map_reg.try_emplace(
                 key, std::make_unique<ValueEntry>(ValueEntry(value["VALUE"])));
             break;
-        case MapTransfos::MAP:
+        }
+        case MapTransfos::MAP: {
             if (value.contains("VAR") and !value["VAR"].is_null()) {
                 var = value["VAR"].get<std::string>();
             }
@@ -117,56 +119,61 @@ int MappingHandler::init_mappings(const std::string& ids_name,
                          MapEntry(value["PLUGIN"].get<PluginType>(),
                                   value["KEY"].get<std::string>(), var)));
             break;
-            // case MapTransfos::OFFSET :
-            //     if(value.contains("VAR")) value["VAR"].get_to(var);
-            //     float temp_float_offset;
-            //     if (value["OFFSET"].is_number_float()){
-            //         temp_float_offset = value["OFFSET"].get<float>();
-            //     } else if (value["OFFSET"].is_string()) {
-            //         try {
-            //             const auto post_inja_str = inja::render(
-            //                                             value["OFFSET"].get<std::string>(),
-            //                                             m_ids_attributes[ids_name]
-            //                                         );
-            //             temp_float_offset = std::stof(post_inja_str);
-            //         } catch (const std::invalid_argument& e) {
-            //             UDA_LOG(UDA_LOG_DEBUG, "\nCannot convert OFFSET
-            //             string to float\n"); break;
-            //         }
-            //     }
-            //     temp_map_reg.try_emplace(key,
-            //             std::make_unique<OffsetEntry>(OffsetEntry(
-            //                     value["PLUGIN"].get<PluginType>(),
-            //                     value["KEY"].get<std::string>(),
-            //                     var,
-            //                     temp_float_offset
-            //                 )));
-            //     break;
-            // case MapTransfos::SCALE :
-            //     if(value.contains("VAR")) value["VAR"].get_to(var);
-            //     float temp_float_scale;
-            //     if (value["SCALAR"].is_number_float()){
-            //         temp_float_scale = value["SCALAR"].get<float>();
-            //     } else if (value["SCALAR"].is_string()) {
-            //         try {
-            //             const auto post_inja_str = inja::render(
-            //                                             value["SCALAR"].get<std::string>(),
-            //                                             m_ids_attributes[ids_name]
-            //                                         );
-            //             temp_float_scale = std::stof(post_inja_str);
-            //         } catch (const std::invalid_argument& e) {
-            //             UDA_LOG(UDA_LOG_DEBUG, "\nCannot convert SCALAR
-            //             string to float\n"); break;
-            //         }
-            //     }
-            //     temp_map_reg.try_emplace(key,
-            //             std::make_unique<ScaleEntry>(ScaleEntry(
-            //                     value["PLUGIN"].get<PluginType>(),
-            //                     value["KEY"].get<std::string>(),
-            //                     var,
-            //                     temp_float_scale
-            //                 )));
-            //     break;
+        }
+        case MapTransfos::OFFSET: {
+            if (value.contains("VAR") and !value["VAR"].is_null()) {
+                var = value["VAR"].get<std::string>();
+            }
+            float temp_float_offset{0.0};
+            // OFFSET required by schema, no need to check
+            // Can be string or float
+            if (value["OFFSET"].is_number_float()) {
+                temp_float_offset = value["OFFSET"].get<float>();
+            } else if (value["OFFSET"].is_string()) {
+                try {
+                    const auto post_inja_str =
+                        inja::render(value["OFFSET"].get<std::string>(),
+                                     m_ids_attributes[ids_name]);
+                    temp_float_offset = std::stof(post_inja_str);
+                } catch (const std::invalid_argument& e) {
+                    UDA_LOG(UDA_LOG_DEBUG,
+                            "\nCannot convert OFFSET string to float\n");
+                    break;
+                }
+            }
+            temp_map_reg.try_emplace(
+                key,
+                std::make_unique<OffsetEntry>(OffsetEntry(
+                    value["PLUGIN"].get<PluginType>(),
+                    value["KEY"].get<std::string>(), var, temp_float_offset)));
+            break;
+        }
+        case MapTransfos::SCALE: {
+            if (value.contains("VAR") and !value["VAR"].is_null()) {
+                var = value["VAR"].get<std::string>();
+            }
+            float temp_float_scale{1.0};
+            if (value["SCALAR"].is_number_float()) {
+                temp_float_scale = value["SCALAR"].get<float>();
+            } else if (value["SCALAR"].is_string()) {
+                try {
+                    const auto post_inja_str =
+                        inja::render(value["SCALAR"].get<std::string>(),
+                                     m_ids_attributes[ids_name]);
+                    temp_float_scale = std::stof(post_inja_str);
+                } catch (const std::invalid_argument& e) {
+                    UDA_LOG(UDA_LOG_DEBUG,
+                            "\nCannot convert SCALAR string to float\n");
+                    break;
+                }
+            }
+            temp_map_reg.try_emplace(
+                key,
+                std::make_unique<ScaleEntry>(ScaleEntry(
+                    value["PLUGIN"].get<PluginType>(),
+                    value["KEY"].get<std::string>(), var, temp_float_scale)));
+            break;
+        }
             // case MapTransfos::DIM :
             //     temp_map_reg.try_emplace(key,
             //             std::make_unique<DimEntry>(DimEntry(
