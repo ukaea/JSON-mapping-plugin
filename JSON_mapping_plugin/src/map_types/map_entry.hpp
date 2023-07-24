@@ -7,7 +7,7 @@ class MapEntry : public Mapping {
   public:
     MapEntry() = delete;
     MapEntry(PluginType plugin, std::string key, std::optional<std::string> var)
-        : m_plugin{plugin}, m_key{key}, m_var{var} {};
+        : m_plugin{plugin}, m_key{std::move(key)}, m_var{std::move(var)} {};
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
                 entries,

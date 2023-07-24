@@ -150,7 +150,7 @@ int ValueEntry::type_deduc_prim(DATA_BLOCK* data_block,
         break;
     case nlohmann::json::value_t::number_unsigned:
         // Handle int
-        imas_json_plugin::uda_helpers ::setReturnDataScalarType<unsigned int>(
+        imas_json_plugin::uda_helpers::setReturnDataScalarType<unsigned int>(
             data_block, temp_val.get<unsigned int>(), nullptr);
         break;
     case nlohmann::json::value_t::boolean:
@@ -169,7 +169,7 @@ int ValueEntry::type_deduc_prim(DATA_BLOCK* data_block,
         // inja templating may replace with number
         try {
             const int i_str{std::stoi(post_inja_str)}; // throw
-            imas_json_plugin::uda_helpers ::setReturnDataScalarType<int>(
+            imas_json_plugin::uda_helpers::setReturnDataScalarType<int>(
                 data_block, i_str, nullptr);
         } catch (const std::invalid_argument& e) {
             UDA_LOG(UDA_LOG_DEBUG,

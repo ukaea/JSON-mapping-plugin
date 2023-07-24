@@ -224,16 +224,19 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         return 1; // Move on, no mapping found
     }
 
-    // set signal_type
+    // Deduce signal_type
     const auto sig_type = deduc_sig_type(split_elem_vec.back());
     if (sig_type == SignalType::INVALID) {
-        return 1;
+        return 1; // Don't throw, go gentle into that good night
     }
 
+    // Find/Set request data such as host, port, shot,
+    // indices + signal type
     map_entries[map_path]->set_current_request_data(
         &request_data->nameValueList);
     map_entries[map_path]->set_sig_type(sig_type);
 
+    // For mapping object perform mapping
     return map_entries[map_path]->map(plugin_interface, map_entries,
                                       ids_attrs_map);
 }
