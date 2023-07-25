@@ -10,7 +10,7 @@
 
 namespace DRaFT_plugin_helpers {
 
-/**
+    /**
  * @brief
  *
  * @param key
@@ -41,17 +41,74 @@ nlohmann::json read_json_data(std::string_view key, int shot) {
  *
  * @return
  */
-int deduc_type_rank() { return 0; }
+int set_return_data(DATA_BLOCK* data_block, nlohmann::json& data, std::string_view var) {
 
-/**
- * @brief
- *
- * @return
- */
-int set_return_data() {
+    int err{1};
+    // sort out tomorrow
+    std::string type{data["type"]};
+    int rank{data["rank"]};
 
-    deduc_type_rank();
-    return 0;
+    const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP {
+        {typeid(int).name(), UDA_TYPE_INT},
+        {typeid(float).name(), UDA_TYPE_FLOAT},
+        {typeid(double).name(), UDA_TYPE_DOUBLE}
+    };
+
+    if (rank > 0) {
+
+        switch (UDA_TYPE_MAP.at(type)) {
+            case UDA_TYPE_INT: {
+                auto vec_values = data[var].get<std::vector<int>>();
+                err = imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                    int>(data_block, vec_values);
+                break;
+            }
+            case UDA_TYPE_FLOAT: {
+                auto vec_values = data[var].get<std::vector<float>>();
+                err = imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                    float>(data_block, vec_values);
+                break;
+            }
+            case UDA_TYPE_DOUBLE: {
+                auto vec_values = data[var].get<std::vector<double>>();
+                err = imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
+                    double>(data_block, vec_values);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+
+    } else if (rank == 0) {
+
+        switch (UDA_TYPE_MAP.at(type)) {
+            case UDA_TYPE_INT: {
+                auto value = data[var].get<int>();
+                err = imas_json_plugin::uda_helpers::setReturnDataScalarType<
+                    int>(data_block, value);
+                break;
+            }
+            case UDA_TYPE_FLOAT: {
+                auto value = data[var].get<float>();
+                err = imas_json_plugin::uda_helpers::setReturnDataScalarType<
+                    float>(data_block, value);
+                break;
+            }
+            case UDA_TYPE_DOUBLE: {
+                auto value = data[var].get<double>();
+                err = imas_json_plugin::uda_helpers::setReturnDataScalarType<
+                    double>(data_block, value);
+                break;
+            }
+            default: {
+                break;
+            }
+        }
+
+    }
+    
+    return err;
 }
 
 /**
@@ -67,19 +124,12 @@ int get_data(DATA_BLOCK* data_block, std::string_view key, std::string_view var,
              int shot) {
 
     int err{1};
-    if (key.find("/APC/plasma_current") !=
-        std::string::npos) { // temporary plasma_current test
-        auto local_json = read_json_data(key, shot);
-        // std::ofstream my_log_file;
-        // my_log_file.open("/Users/aparker/UDADevelopment/adam2.log",
-        // std::ios_base::app); my_log_file << key << std::endl; my_log_file <<
-        // local_json.dump(4) << std::endl; my_log_file.close();
-        if (!var.empty()) {
-            auto vec_values = local_json[var].get<std::vector<float>>();
-            err = imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
-                float>(data_block, vec_values);
-        }
+    if (var.empty()) { 
+        return err;
     }
-    return err;
+    auto local_json = read_json_data(key, shot);
+
+    return set_return_data(data_block, local_json, var);
+
 }
 } // namespace DRaFT_plugin_helpers
