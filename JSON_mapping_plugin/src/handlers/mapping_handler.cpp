@@ -6,6 +6,7 @@
 #include "map_types/map_entry.hpp"
 #include "map_types/offset_entry.hpp"
 #include "map_types/scale_entry.hpp"
+#include "map_types/dim_entry.hpp"
 // #include <expr_entry.hpp>
 // #include <dim_entry.hpp>
 
@@ -174,12 +175,13 @@ int MappingHandler::init_mappings(const std::string& ids_name,
                     value["KEY"].get<std::string>(), var, temp_float_scale)));
             break;
         }
-            // case MapTransfos::DIM :
-            //     temp_map_reg.try_emplace(key,
-            //             std::make_unique<DimEntry>(DimEntry(
-            //                     value["DIM_PROBE"].get<std::string>()
-            //                 )));
-            //     break;
+        case MapTransfos::DIM : {
+            temp_map_reg.try_emplace(key,
+                    std::make_unique<DimEntry>(DimEntry(
+                            value["DIM_PROBE"].get<std::string>()
+                        )));
+            break;
+        }
             // case MapTransfos::EXPR :
             //     temp_map_reg.try_emplace(key,
             //             std::make_unique<ExprEntry>(ExprEntry(

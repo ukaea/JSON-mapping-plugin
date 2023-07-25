@@ -55,6 +55,8 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
         switch (m_request_data.sig_type) {
         case SignalType::DEFAULT: // fallthrough
             [[fallthrough]];
+        case SignalType::DIM: // fallthrough
+            [[fallthrough]];
         case SignalType::DATA:
             err = callPlugin(interface->pluginList, request.c_str(), interface);
             break;
@@ -67,13 +69,6 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
             break;
         case SignalType::ERROR:
             // To implement
-            break;
-        case SignalType::DIM:
-            // if (!callPlugin(interface->pluginList, request.c_str(),
-            // interface)) {
-            // AJP: setReturnDataScalar<int>(interface,
-            // interface->data_block->data_n, nullptr);
-            // }
             break;
         default:
             break;
