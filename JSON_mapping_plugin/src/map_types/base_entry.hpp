@@ -1,7 +1,7 @@
 #pragma once
+#include "utils/uda_plugin_helpers.hpp"
 
 #include <clientserver/udaStructs.h>
-#include <helpers/uda_plugin_helpers.hpp>
 #include <nlohmann/json.hpp>
 #include <plugins/pluginStructs.h>
 #include <plugins/udaPlugin.h>

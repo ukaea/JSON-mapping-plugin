@@ -1,8 +1,7 @@
 #include "map_entry.hpp"
-#include "base_entry.hpp"
 
-#include "helpers/scale_offset.hpp"
-#include "helpers/uda_plugin_helpers.hpp"
+#include "utils/scale_offset.hpp"
+#include "utils/uda_plugin_helpers.hpp"
 #include <boost/format.hpp>
 #include <inja/inja.hpp>
 

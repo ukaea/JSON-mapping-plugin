@@ -1,4 +1,4 @@
-#include "helpers/scale_offset.hpp"
+#include "utils/scale_offset.hpp"
 #include <clientserver/udaTypes.h>
 #include <logging/logging.h>
 

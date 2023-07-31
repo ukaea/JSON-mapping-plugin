@@ -7,8 +7,8 @@ set(SOURCES
     src/map_types/base_entry.cpp
     src/map_types/map_entry.cpp
     src/map_types/dim_entry.cpp
-    src/helpers/uda_plugin_helpers.cpp
-    src/helpers/scale_offset.cpp
+    src/utils/uda_plugin_helpers.cpp
+    src/utils/scale_offset.cpp
 )
 
 #set(EXE_SOURCES
@@ -22,9 +22,9 @@ set(HEADERS
     src/map_types/base_entry.hpp
     src/map_types/map_entry.hpp
     src/map_types/dim_entry.hpp
-    src/helpers/uda_plugin_helpers.hpp
-    src/helpers/DRaFT_plugin_helpers.hpp
-    src/helpers/scale_offset.hpp
+    src/utils/uda_plugin_helpers.hpp
+    src/utils/DRaFT_plugin_helpers.hpp
+    src/utils/scale_offset.hpp
 )
 
 set(INCLUDE_DIRS
