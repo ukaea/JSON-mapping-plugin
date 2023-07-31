@@ -144,6 +144,7 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 SignalType
 JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
 
+    // SignalType useful in determining for MAST-U
     SignalType sig_type{SignalType::DEFAULT};
     if (element_back_str.empty()) {
         UDA_LOG(UDA_LOG_DEBUG,

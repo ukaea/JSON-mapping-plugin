@@ -30,6 +30,11 @@ int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
         free(indices); // Legacy C UDA, replace if possible
         indices = nullptr;
     }
+    // Subtract 1 from each indices element, IMAS is 1-based
+    // and other machines (MAST-U for example) are zero-based
+    std::for_each(vec_indices.begin(), vec_indices.end(), [](int &n){ n-=1; });
+
+
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
