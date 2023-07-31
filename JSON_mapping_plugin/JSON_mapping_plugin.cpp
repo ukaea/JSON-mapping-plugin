@@ -227,7 +227,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING,
                            "JSONMappingPlugin::get: - "
                            "IDS path not found in JSON mapping file");
-        if (sig_type == SignalType::TIME) {
+        if (sig_type == SignalType::TIME or sig_type == SignalType::DATA) {
             split_elem_vec.pop_back();
             map_path = boost::algorithm::join(split_elem_vec, "/");
             if (!map_entries.count(map_path)) { // implicit conversion
@@ -267,7 +267,7 @@ int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     try {
         static JSONMappingPlugin plugin = {};
-        const auto plugin_func = request_data->function;
+        auto* const plugin_func = request_data->function;
 
         if (plugin_interface->housekeeping ||
             STR_IEQUALS(plugin_func, "reset")) {

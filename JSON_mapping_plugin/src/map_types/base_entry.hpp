@@ -6,21 +6,14 @@
 #include <plugins/pluginStructs.h>
 #include <plugins/udaPlugin.h>
 
-enum class MapTransfos { VALUE, MAP, OFFSET, SCALE, EXPR, DIM };
+enum class MapTransfos { VALUE, MAP, PLUGIN, EXPR, DIM };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MapTransfos, {{MapTransfos::VALUE, "VALUE"},
-                                           {MapTransfos::MAP, "MAP"},
-                                           {MapTransfos::OFFSET, "OFFSET"},
-                                           {MapTransfos::SCALE, "SCALE"},
+                                           {MapTransfos::PLUGIN, "PLUGIN"},
+                                           // {MapTransfos::OFFSET, "OFFSET"},
+                                           // {MapTransfos::SCALE, "SCALE"},
                                            {MapTransfos::EXPR, "EXPR"},
                                            {MapTransfos::DIM, "DIMENSION"}});
-
-enum class PluginType { UDA, GEOMETRY, JSONReader };
-
-NLOHMANN_JSON_SERIALIZE_ENUM(PluginType,
-                             {{PluginType::UDA, "UDA"},
-                              {PluginType::GEOMETRY, "GEOMETRY"},
-                              {PluginType::JSONReader, "JSONReader"}});
 
 enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM, INVALID };
 

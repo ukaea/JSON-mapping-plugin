@@ -1,91 +1,69 @@
 #include "map_entry.hpp"
 #include "base_entry.hpp"
 
-// #include <mastu_plugin_helpers.hpp>
-#include "helpers/DRaFT_plugin_helpers.hpp"
+#include "helpers/scale_offset.hpp"
 #include "helpers/uda_plugin_helpers.hpp"
 #include <boost/format.hpp>
 #include <inja/inja.hpp>
 
-std::string MapEntry::get_request(const nlohmann::json& json_globals) const {
+std::string
+MapEntry::get_request_string(const nlohmann::json& json_globals) const {
 
-    std::string request;
-    std::string post_inja{inja::render(m_key, json_globals)};
-    post_inja = inja::render(post_inja, json_globals); //!! Double inja render
-
-    if (m_plugin == PluginType::UDA) {
-
-        // eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460,
-        //              host=uda2.hpc.l, port=56565)
-        request =
-            (boost::format("UDA::get(signal=%s, source=%d, host=%s, port=%d)") %
-             post_inja % m_request_data.shot % m_request_data.host %
-             m_request_data.port)
+    std::string request_str = m_plugin.second + "::get(";
+    for (const auto& [key, field] : m_map_args) {
+        request_str +=
+            (boost::format("%s=%s, ") % key %
+             inja::render(inja::render(field, json_globals), json_globals))
                 .str();
-
-    } else if (m_plugin == PluginType::GEOMETRY) {
-
-        // eg. GEOMETRY::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
-        std::transform(post_inja.begin(), post_inja.end(), post_inja.begin(),
-                       ::tolower);
-        request = (boost::format("GEOM::get(signal=%1%, Config=1)") % post_inja)
-                      .str();
-
-    } else if (m_plugin == PluginType::JSONReader) {
-
-        // Return post_inja key, JSONReader --> code call, rather than plugin
-        request = post_inja;
     }
+    request_str +=
+        (boost::format("source=%i, host=%s, port=%i)") % m_request_data.shot %
+         m_request_data.host % m_request_data.port)
+            .str();
 
-    UDA_LOG(UDA_LOG_DEBUG, "AJP Request : %s\n", request.c_str());
-    return request;
+    // eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460,
+    //              host=uda2.hpc.l, port=56565)
+    // eg. GEOMETRY::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
+    // eg. JSONDataReader::get(signal=/APC/plasma_current);
+
+    UDA_LOG(UDA_LOG_DEBUG, "AJP Request : %s\n", request_str.c_str());
+    return request_str;
 }
 
 int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
                            const nlohmann::json& json_globals) const {
 
     int err{1};
-    auto request = get_request(json_globals);
-    if (request.empty()) {
-        return err; // Return 1 if no request retrieved
-    }
+    auto request_str = get_request_string(json_globals);
+    if (request_str.empty()) {
+        return err;
+    } // Return 1 if no request receieved
 
-    if (m_plugin == PluginType::UDA) { // UDA
+    err = callPlugin(interface->pluginList, request_str.c_str(), interface);
+    if (err) {
+        return err;
+    } // return code if failure, no need to proceed
 
-        switch (m_request_data.sig_type) {
-        case SignalType::DEFAULT: // fallthrough
-            [[fallthrough]];
-        case SignalType::DIM: // fallthrough
-            [[fallthrough]];
-        case SignalType::DATA:
-            err = callPlugin(interface->pluginList, request.c_str(), interface);
-            break;
-        case SignalType::TIME:
-            if (!callPlugin(interface->pluginList, request.c_str(),
-                            interface)) {
-                err = imas_json_plugin::uda_helpers::setReturnTimeArray(
-                    interface->data_block);
-            }
-            break;
-        case SignalType::ERROR:
-            // To implement
-            break;
-        default:
-            break;
+    if (m_request_data.sig_type == SignalType::TIME) {
+        // Opportunity to handle time differently
+        // Return time SignalType early, no need to scale/offset
+        if (m_plugin.first == PluginType::UDA) {
+            err = imas_json_plugin::uda_helpers::setReturnTimeArray(
+                interface->data_block);
         }
-
-    } else if (m_plugin == PluginType::GEOMETRY) {
-
-        err = 1; // Change to error enum class
-
-    } else if (m_plugin == PluginType::JSONReader) { // JSONReader
-
-        err = DRaFT_plugin_helpers::get_data(interface->data_block, request,
-                                             m_var.value_or(""),
-                                             m_request_data.shot);
+        return err;
     }
 
-    return err;
+    if (m_scale.has_value()) {
+        JMP::map_transform::transform_scale(interface->data_block,
+                                            m_scale.value());
+    }
+    if (m_offset.has_value()) {
+        JMP::map_transform::transform_offset(interface->data_block,
+                                             m_offset.value());
+    }
+
+    return 0;
 }
 
 int MapEntry::map(

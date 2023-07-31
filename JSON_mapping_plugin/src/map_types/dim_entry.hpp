@@ -3,7 +3,7 @@
 #include "map_types/base_entry.hpp"
 
 class DimEntry : public Mapping {
-public:
+  public:
     DimEntry() = delete;
     explicit DimEntry(std::string dim_probe)
         : m_dim_probe{std::move(dim_probe)} {};
@@ -13,6 +13,6 @@ public:
                 entries,
             const nlohmann::json& json_globals) const override;
 
-private:
+  private:
     std::string m_dim_probe;
 };
