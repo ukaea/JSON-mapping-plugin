@@ -91,9 +91,10 @@ include_directories( ${CMAKE_CURRENT_LIST_DIR} )
 # This list is appended to by the uda_plugin macro
 set( BUILT_PLUGINS "${PLUGINS}" )
 
-set( PLUGINS IMAS_JSON_MAP )
+# set( PLUGINS IMAS_JSON_MAP )
 message(STATUS "PLUGINS: ${PLUGINS}")
 add_subdirectory( JSON_mapping_plugin )
+add_subdirectory( DRaFT_data_reader )
 
 #
 # Generate scripts
