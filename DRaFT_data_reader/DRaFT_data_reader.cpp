@@ -86,8 +86,9 @@ int DRaFTDataReaderPlugin::get(IDAM_PLUGIN_INTERFACE* interface) {
     FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, signal);
     std::string signal_str{signal};
 
-    // (1) access data
-    // (2) deduce rank + type
+    // (0) parse needed arguments
+    // (1) access experiment data
+    // (2) deduce rank + type (if applicable)
     // (3) set return data
     return return_DRaFT_data(interface->data_block, source, signal_str);
 
@@ -176,7 +177,7 @@ nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string_view signal, in
         nlohmann::json::json_pointer json_p{signal.data()}; // TO CHANGE
         temp_json = temp_json[json_p];
     } catch (nlohmann::json::parse_error& e) {
-        temp_json = nlohmann::json::parse(R"(null)");
+        temp_json = nlohmann::json::parse("{}");
     }
 
     return temp_json;
