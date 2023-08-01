@@ -30,6 +30,15 @@ namespace JSONMapping {
 
 enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
 
+
+/**
+ * @brief Temporary logging function for JSON_mapping_plugin, outputs
+ * to UDA_HOME/etc/
+ *
+ * @param log_level The JPLogLevel (INFO, WARNING, ERROR, DEBUG)
+ * @param log_msg The message to be logged
+ * @return
+ */
 int JPLog(JPLogLevel log_level, std::string_view log_msg) {
 
     const ENVIRONMENT* environment = getServerEnvironment();
@@ -72,7 +81,14 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
 
 /**
  * @class JSONMappingPlugin
- * @brief
+ * @brief UDA plugin to map Tokamak data
+ *
+ * UDA plugin to allow the mapping of experimental fusion data to IMAS data
+ * format for a given data dictionary version. Mappings are available in
+ * JSON format, which are then parsed and used to
+ * (1) read data,
+ * (2) apply transformations, and
+ * (3) return the data in a format the IDS is expecting
  *
  */
 class JSONMappingPlugin {
@@ -89,14 +105,20 @@ class JSONMappingPlugin {
 
   private:
     bool m_init = false;
+    // Loads, controls, stores mapping file lifetime
     MappingHandler m_mapping_handler;
     SignalType deduc_sig_type(std::string_view element_back_str);
 };
+
 /**
- * @brief
+ * @brief Initialise the JSON_mapping_plugin
  *
- * @param plugin_interface
- * @return
+ * Set mapping directory and load mapping files into mapping_handler
+ * RAISE_PLUGIN_ERROR if JSON mapping file location is not set
+ *
+ * @param plugin_interface Top-level UDA plugin interface
+ * @return errorcode UDA convention to return int errorcode
+ * 0 success, !0 failure
  */
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
@@ -124,8 +146,9 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 /**
  * @brief
  *
- * @param plugin_interface
- * @return
+ * @param plugin_interface Top-level UDA plugin interface
+ * @return errorcode UDA convention to return int errorcode
+ * 0 success, !0 failure
  */
 int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     if (m_init) {
@@ -136,10 +159,13 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 }
 
 /**
- * @brief
+ * @brief Deduce the type of signal being requested/mapped,
+ * currently using string comparisons
  *
- * @param element_back_str
- * @return SignalType
+ * @param element_back_str requested IDS path suffix (eg. data, time, error).
+ * @note if no string is supplied, SignalType set to invalid
+ * @return SignalType Enum class containing the current signal type
+ * [DEFAULT, INVALID, DATA, TIME, ERROR]
  */
 SignalType
 JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
@@ -150,9 +176,9 @@ JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
         UDA_LOG(UDA_LOG_DEBUG,
                 "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
         sig_type = SignalType::INVALID;
-    } else if (!element_back_str.compare("data")) {
+    } else if (!element_back_str.compare("data")) { // implicit conversion
         sig_type = SignalType::DATA;
-    } else if (!element_back_str.compare("time")) {
+    } else if (!element_back_str.compare("time")) { // implicit conversion
         sig_type = SignalType::TIME;
     } else if (element_back_str.find("error") != std::string::npos) {
         sig_type = SignalType::ERROR;
@@ -161,10 +187,11 @@ JSONMappingPlugin::deduc_sig_type(std::string_view element_back_str) {
 }
 
 /**
- * @brief
+ * @brief Main data/mapping function called from class entry function
  *
- * @param plugin_interface
- * @return
+ * @param plugin_interface Top-level UDA plugin interface
+ * @return errorcode UDA convention to return int errorcode
+ * 0 success, !0 failure
  */
 int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
