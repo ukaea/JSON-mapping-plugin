@@ -1,7 +1,7 @@
 # JSON Mapping Plugin
 
 ## Compilation + Contribution (JH + SD)
-STILL VERY ROUGH  (#nohaters)
+STILL VERY ROUGH  (#nohaters)  
 (AP: Everything has been rewritten so many times, I have kinda lost track.. 
 Will be committed to branches now rather than main)
 
