@@ -21,6 +21,7 @@
 #include "DRaFT_data_reader.h"
 #include <clientserver/udaStructs.h>
 #include <clientserver/udaTypes.h>
+#include <logging/logging.h>
 #include <plugins/udaPlugin.h>
 
 #ifdef __GNUC__
@@ -63,13 +64,14 @@ public:
     int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
 private:
-    int return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string_view signal);
-    nlohmann::json read_json_data(std::string_view signal, int shot);
+    int return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string signal);
+    int return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, std::string signal);
+    nlohmann::json read_json_data(std::string signal, int shot);
     bool init_ = false;
 };
 
 int DRaFTDataReaderPlugin::get(IDAM_PLUGIN_INTERFACE* interface) {
-    
+
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
     DATA_BLOCK* data_block = interface->data_block;
@@ -85,22 +87,46 @@ int DRaFTDataReaderPlugin::get(IDAM_PLUGIN_INTERFACE* interface) {
     const char* signal{nullptr};
     FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, signal);
     std::string signal_str{signal};
+    bool time_sig{false}; // False by default
+    // FIND_INT_VALUE(request_data->nameValueList, time_sig); // TO FIX
+    if (signal_str.find("time") != std::string::npos) {
+        time_sig = true;
+    }
 
     // (0) parse needed arguments
     // (1) access experiment data
     // (2) deduce rank + type (if applicable)
-    // (3) set return data
-    return return_DRaFT_data(interface->data_block, source, signal_str);
+    // (3) set return data (may be dependent on time or data)
+    return time_sig ?
+        return_DRaFT_data_time(interface->data_block, source, signal_str) :
+        return_DRaFT_data(interface->data_block, source, signal_str);
+}
+
+int DRaFTDataReaderPlugin::return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, std::string signal) {
+
+    const auto data = read_json_data(signal, shot);
+    auto vec_values = data.get<std::vector<float>>();
+    const size_t shape{vec_values.size()};
+    int err = setReturnDataFloatArray(data_block, vec_values.data(),
+                                    1, &shape, nullptr);
+    // Cleanup to make things behave
+    data_block->order = -1;
+    data_block->dims[0].dim = nullptr;
+    data_block->dims[0].data_type = UDA_TYPE_UNSIGNED_INT;
+    data_block->dims[0].compressed = 1;
+    data_block->dims[0].method = 0;
+    data_block->dims[0].dim0 = 0.0;
+    data_block->dims[0].diff = 1.0;
+    return 0;
 
 }
 
-int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string_view signal) {
+int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string signal) {
 
     int err{1};
     const auto data = read_json_data(signal, shot);
-    const auto type = data["type"].get<std::string>();
-    const auto rank = data["rank"].get<int>();
-    std::string var{"data"};
+    const auto type = read_json_data(signal+"_type", shot).get<std::string>();
+    const auto rank = read_json_data(signal+"_rank", shot).get<int>();
 
     const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{
         {typeid(int).name(), UDA_TYPE_INT},
@@ -108,25 +134,25 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
         {typeid(double).name(), UDA_TYPE_DOUBLE}
     };
 
+    // All DRaFT data is rank 1 : other experiments would need to expand
     if (rank > 0) {
-
         switch (UDA_TYPE_MAP.at(type)) {
         case UDA_TYPE_INT: {
-            auto vec_values = data[var].get<std::vector<int>>();
+            auto vec_values = data.get<std::vector<int>>();
             const size_t shape{vec_values.size()};
             err = setReturnDataIntArray(data_block, vec_values.data(),
                                         rank, &shape, nullptr);
             break;
         }
         case UDA_TYPE_FLOAT: {
-            auto vec_values = data[var].get<std::vector<float>>();
+            auto vec_values = data.get<std::vector<float>>();
             const size_t shape{vec_values.size()};
             err = setReturnDataFloatArray(data_block, vec_values.data(),
                                           rank, &shape, nullptr);
             break;
         }
         case UDA_TYPE_DOUBLE: {
-            auto vec_values = data[var].get<std::vector<double>>();
+            auto vec_values = data.get<std::vector<double>>();
             const size_t shape{vec_values.size()};
             err = setReturnDataDoubleArray(data_block, vec_values.data(),
                                            rank, &shape, nullptr);
@@ -140,17 +166,17 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
 
         switch (UDA_TYPE_MAP.at(type)) {
         case UDA_TYPE_INT: {
-            auto value = data[var].get<int>();
+            auto value = data.get<int>();
             err = setReturnDataIntScalar(data_block, value, nullptr);
             break;
         }
         case UDA_TYPE_FLOAT: {
-            auto value = data[var].get<float>();
+            auto value = data.get<float>();
             err = setReturnDataFloatScalar(data_block, value, nullptr);
             break;
         }
         case UDA_TYPE_DOUBLE: {
-            auto value = data[var].get<double>();
+            auto value = data.get<double>();
             err = setReturnDataDoubleScalar(data_block, value, nullptr);
             break;
         }
@@ -159,14 +185,12 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
         }
         }
     }
- 
 
     return 0;
 }   
 
-nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string_view signal, int shot) {
+nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string signal, int shot) {
 
-    // data directory in mapping repository
     std::string map_dir = getenv("DRaFT_DATA_DIR");
     std::string data_path = map_dir + "/" + std::to_string(shot) + ".json";
     std::ifstream json_file(data_path);
@@ -174,10 +198,9 @@ nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string_view signal, in
     json_file.close();
 
     try {
-        nlohmann::json::json_pointer json_p{signal.data()}; // TO CHANGE
-        temp_json = temp_json[json_p];
-    } catch (nlohmann::json::parse_error& e) {
-        temp_json = nlohmann::json::parse("{}");
+        temp_json = temp_json.at(signal);
+    } catch (std::exception& e) {
+        temp_json = nlohmann::json::parse("[]");
     }
 
     return temp_json;
