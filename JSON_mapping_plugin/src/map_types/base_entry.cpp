@@ -34,8 +34,6 @@ int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
     // and other machines (MAST-U for example) are zero-based
     std::for_each(vec_indices.begin(), vec_indices.end(), [](int &n){ n-=1; });
 
-
-
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
     m_request_data.host = "uda2.hpc.l";
@@ -69,7 +67,7 @@ int ValueEntry::map(
         return 1;
     }
 
-    int err{0};
+    int err{1};
     if (temp_val.is_array()) {
         // Check all members of array are numbers
         // (Add array of strings if necessary)
@@ -78,14 +76,14 @@ int ValueEntry::map(
             [](const nlohmann::json& els) { return els.is_number(); });
 
         // deduce type if true
-        err =
-            all_number ? type_deduc_array(interface->data_block, temp_val) : 1;
+        if (all_number) {
+            err = type_deduc_array(interface->data_block, temp_val);
+        }
 
     } else if (temp_val.is_primitive()) {
         err = type_deduc_prim(interface->data_block, temp_val, global_data);
     } else {
         UDA_LOG(UDA_LOG_DEBUG, "ValueEntry::map not structured or primitive");
-        err = 1;
     }
 
     return err;
@@ -105,21 +103,21 @@ int ValueEntry::type_deduc_array(DATA_BLOCK* data_block,
     case nlohmann::json::value_t::number_float: {
         // Handle array of floats
         auto temp_vec = temp_val.get<std::vector<float>>();
-        imas_json_plugin::uda_helpers ::setReturnDataArrayType_Vec<float>(
+        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<float>(
             data_block, temp_vec);
         break;
     }
     case nlohmann::json::value_t::number_integer: {
         // Handle array of ints
         auto temp_vec = temp_val.get<std::vector<int>>();
-        imas_json_plugin::uda_helpers ::setReturnDataArrayType_Vec<int>(
+        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<int>(
             data_block, temp_vec);
         break;
     }
     case nlohmann::json::value_t::number_unsigned: {
         // Handle array of ints
         auto temp_vec = temp_val.get<std::vector<unsigned int>>();
-        imas_json_plugin::uda_helpers ::setReturnDataArrayType_Vec<
+        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
             unsigned int>(data_block, temp_vec);
         break;
     }

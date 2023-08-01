@@ -6,12 +6,11 @@
 #include <plugins/pluginStructs.h>
 #include <plugins/udaPlugin.h>
 
-enum class MapTransfos { VALUE, MAP, PLUGIN, EXPR, DIM };
+enum class MapTransfos { VALUE, PLUGIN, SLICE, EXPR, DIM };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MapTransfos, {{MapTransfos::VALUE, "VALUE"},
                                            {MapTransfos::PLUGIN, "PLUGIN"},
-                                           // {MapTransfos::OFFSET, "OFFSET"},
-                                           // {MapTransfos::SCALE, "SCALE"},
+                                           {MapTransfos::SLICE, "SLICE"},
                                            {MapTransfos::EXPR, "EXPR"},
                                            {MapTransfos::DIM, "DIMENSION"}});
 
@@ -25,6 +24,10 @@ class Mapping {
                     const std::unordered_map<std::string,
                                              std::unique_ptr<Mapping>>& entries,
                     const nlohmann::json& global_data) const = 0;
+    [[nodiscard]]
+    std::vector<int> get_current_indices() const {
+        return m_request_data.indices;
+    }
     int set_current_request_data(NAMEVALUELIST* nvlist);
     int set_sig_type(SignalType sig_type) {
         m_request_data.sig_type = sig_type;

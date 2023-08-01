@@ -35,7 +35,7 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
     const ENVIRONMENT* environment = getServerEnvironment();
 
     std::string log_file_name =
-        std::string{environment->logdir} + "plugins.d/logs/JSON_plugin.log";
+        std::string{environment->logdir} + "/JSON_plugin.log";
     std::ofstream jp_log_file;
     jp_log_file.open(log_file_name, std::ios_base::out | std::ios_base::app);
     std::time_t time_now =
@@ -212,6 +212,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         RAISE_PLUGIN_ERROR("JSONMappingPlugin::get:"
                            " - JSON mapping not loaded, no map entries");
     }
+
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current
     split_elem_vec.pop_front();
@@ -232,16 +233,19 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
             split_elem_vec.pop_back();
             map_path = boost::algorithm::join(split_elem_vec, "/");
             if (!map_entries.count(map_path)) { // implicit conversion
-                return 1;                       // Move on, no mapping found
+                return 1; // No mapping found, don't throw
             }
         }
     }
 
+    // TODO: Rethink request data store when parsing NameValueList
     // Find/Set request data such as host, port, shot,
     // indices + signal type
     map_entries[map_path]->set_current_request_data(
-        &request_data->nameValueList);
+                               &request_data->nameValueList);
     map_entries[map_path]->set_sig_type(sig_type);
+    // Add request indices to globals
+    ids_attrs_map["indices"] = map_entries[map_path]->get_current_indices();
 
     // For mapping object perform mapping
     return map_entries[map_path]->map(plugin_interface, map_entries,

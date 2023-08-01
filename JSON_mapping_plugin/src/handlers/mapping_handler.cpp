@@ -6,6 +6,7 @@
 
 #include "map_types/dim_entry.hpp"
 #include "map_types/map_entry.hpp"
+#include "map_types/slice_entry.hpp"
 // #include <expr_entry.hpp>
 // #include <dim_entry.hpp>
 
@@ -89,7 +90,6 @@ int MappingHandler::load_mappings(const std::string& ids_str) {
         map_file.close();
 
         init_mappings(ids_str, temp_mappings);
-
     } else {
         RAISE_PLUGIN_ERROR(
             "MappingHandler::load_mappings - Cannot open JSON mapping file");
@@ -146,6 +146,15 @@ int MappingHandler::init_mappings(const std::string& ids_name,
             temp_map_reg.try_emplace(
                 key, std::make_unique<DimEntry>(
                          DimEntry(value["DIM_PROBE"].get<std::string>())));
+            break;
+        }
+        case MapTransfos::SLICE: {
+            temp_map_reg.try_emplace(
+                key, std::make_unique<SliceEntry>(
+                         SliceEntry(
+                             value["SLICE_INDEX"].get<std::vector<std::string>>(),
+                             value["SIGNAL"].get<std::string>()))
+                );
             break;
         }
             // case MapTransfos::EXPR :

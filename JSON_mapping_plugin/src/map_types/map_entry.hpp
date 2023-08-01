@@ -9,9 +9,9 @@ enum class PluginType { UDA, GEOMETRY, CUSTOM, JSONReader };
 NLOHMANN_JSON_SERIALIZE_ENUM(PluginType,
                              {{PluginType::UDA, "UDA"},
                               {PluginType::GEOMETRY, "GEOMETRY"},
-                              {PluginType::JSONReader, "JSONReader"}});
+                              {PluginType::JSONReader, "DRaFT_JSON"}});
 
-using MapArgs_t = std::unordered_map<std::string, std::string>;
+using MapArgs_t = std::unordered_map<std::string, nlohmann::json>;
 class MapEntry : public Mapping {
   public:
     MapEntry() = delete;
@@ -32,7 +32,7 @@ class MapEntry : public Mapping {
     std::optional<float> m_scale;
 
     [[nodiscard]] std::string
-    get_request_string(const nlohmann::json& json_globals) const;
+    get_request_str(const nlohmann::json& json_globals) const;
     int call_plugins(IDAM_PLUGIN_INTERFACE* interface,
                      const nlohmann::json& json_globals) const;
 };
