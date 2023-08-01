@@ -32,7 +32,8 @@ int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
     }
     // Subtract 1 from each indices element, IMAS is 1-based
     // and other machines (MAST-U for example) are zero-based
-    std::for_each(vec_indices.begin(), vec_indices.end(), [](int &n){ n-=1; });
+    std::for_each(vec_indices.begin(), vec_indices.end(),
+                  [](int& n) { n -= 1; });
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
@@ -117,8 +118,8 @@ int ValueEntry::type_deduc_array(DATA_BLOCK* data_block,
     case nlohmann::json::value_t::number_unsigned: {
         // Handle array of ints
         auto temp_vec = temp_val.get<std::vector<unsigned int>>();
-        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<
-            unsigned int>(data_block, temp_vec);
+        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec<unsigned int>(
+            data_block, temp_vec);
         break;
     }
     default:

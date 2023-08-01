@@ -30,7 +30,6 @@ namespace JSONMapping {
 
 enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
 
-
 /**
  * @brief Temporary logging function for JSON_mapping_plugin, outputs
  * to UDA_HOME/etc/
@@ -260,7 +259,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
             split_elem_vec.pop_back();
             map_path = boost::algorithm::join(split_elem_vec, "/");
             if (!map_entries.count(map_path)) { // implicit conversion
-                return 1; // No mapping found, don't throw
+                return 1;                       // No mapping found, don't throw
             }
         }
     }
@@ -269,7 +268,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // Find/Set request data such as host, port, shot,
     // indices + signal type
     map_entries[map_path]->set_current_request_data(
-                               &request_data->nameValueList);
+        &request_data->nameValueList);
     map_entries[map_path]->set_sig_type(sig_type);
     // Add request indices to globals
     ids_attrs_map["indices"] = map_entries[map_path]->get_current_indices();

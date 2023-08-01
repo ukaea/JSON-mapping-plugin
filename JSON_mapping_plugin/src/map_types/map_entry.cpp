@@ -1,6 +1,6 @@
 /**
  * @file
- * @brief 
+ * @brief
  */
 
 #include "map_entry.hpp"
@@ -11,15 +11,15 @@
 #include <inja/inja.hpp>
 
 /**
- * @brief 
+ * @brief
  *
  * eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460,
  *              host=uda2.hpc.l, port=56565)
  * eg. GEOMETRY::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
  * eg. JSONDataReader::get(signal=/APC/plasma_current);
  *
- * @param json_globals 
- * @return 
+ * @param json_globals
+ * @return
  */
 std::string
 MapEntry::get_request_str(const nlohmann::json& json_globals) const {
@@ -37,7 +37,8 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
                 (boost::format("%s=%s, ") % key %
                  inja::render( // Double inja
                      inja::render(field.get<std::string>(), json_globals),
-                     json_globals)).str();
+                     json_globals))
+                    .str();
         } else if (field.is_boolean()) {
             request_str += (boost::format("%s, ") % key).str();
         } else {
@@ -45,9 +46,9 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
         }
     }
     request_str +=
-        (boost::format("source=%i, host=%s, port=%i)")
-         % m_request_data.shot % m_request_data.host
-         % m_request_data.port).str();
+        (boost::format("source=%i, host=%s, port=%i)") % m_request_data.shot %
+         m_request_data.host % m_request_data.port)
+            .str();
 
     // Add slice to request (when implemented)
     // if (m_slice.has_value()) {
@@ -72,7 +73,6 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
         return err;
     } // return code if failure, no need to proceed
 
-
     if (m_request_data.sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
@@ -85,11 +85,11 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
 
     if (m_scale.has_value()) {
         err = JMP::map_transform::transform_scale(interface->data_block,
-                                            m_scale.value());
+                                                  m_scale.value());
     }
     if (m_offset.has_value()) {
         err = JMP::map_transform::transform_offset(interface->data_block,
-                                             m_offset.value());
+                                                   m_offset.value());
     }
 
     return err;

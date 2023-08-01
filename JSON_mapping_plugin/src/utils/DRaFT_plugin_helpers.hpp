@@ -78,7 +78,8 @@ int set_return_data(DATA_BLOCK* data_block, nlohmann::json& data,
         }
         default: {
             break;
-        }}
+        }
+        }
 
     } else if (rank == 0) {
 

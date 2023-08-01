@@ -128,8 +128,8 @@ int setReturnDataArrayType_Vec(DATA_BLOCK* data_block,
 
 template <typename T>
 int setReturnDataValArray(DATA_BLOCK* data_block,
-                               const std::valarray<T>& va_values,
-                               const char* description = nullptr) {
+                          const std::valarray<T>& va_values,
+                          const char* description = nullptr) {
 
     initDataBlock(data_block);
 

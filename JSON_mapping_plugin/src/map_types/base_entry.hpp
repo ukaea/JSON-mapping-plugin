@@ -24,8 +24,7 @@ class Mapping {
                     const std::unordered_map<std::string,
                                              std::unique_ptr<Mapping>>& entries,
                     const nlohmann::json& global_data) const = 0;
-    [[nodiscard]]
-    std::vector<int> get_current_indices() const {
+    [[nodiscard]] std::vector<int> get_current_indices() const {
         return m_request_data.indices;
     }
     int set_current_request_data(NAMEVALUELIST* nvlist);
