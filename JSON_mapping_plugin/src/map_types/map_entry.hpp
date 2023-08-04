@@ -4,11 +4,11 @@
 #include <optional>
 #include <unordered_map>
 
-enum class PluginType { UDA, GEOMETRY, CUSTOM, JSONReader };
+enum class PluginType { UDA, GEOMETRY, JSONReader };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(PluginType,
                              {{PluginType::UDA, "UDA"},
-                              {PluginType::GEOMETRY, "GEOMETRY"},
+                              {PluginType::GEOMETRY, "GEOM"},
                               {PluginType::JSONReader, "DRaFT_JSON"}});
 
 using MapArgs_t = std::unordered_map<std::string, nlohmann::json>;

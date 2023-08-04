@@ -15,7 +15,7 @@
  *
  * eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460,
  *              host=uda2.hpc.l, port=56565)
- * eg. GEOMETRY::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
+ * eg. GEOM::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
  * eg. JSONDataReader::get(signal=/APC/plasma_current);
  *
  * @param json_globals
