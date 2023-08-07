@@ -12,9 +12,10 @@
  * @param global_data global JSON object used in templating
  * @return int error_code
  */
-int CustomEntry::map(IDAM_PLUGIN_INTERFACE* interface,
-            const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-            const nlohmann::json& global_data) const {
+int CustomEntry::map(
+    IDAM_PLUGIN_INTERFACE* interface,
+    const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
+    const nlohmann::json& global_data) const {
 
     int err{1};
     switch (m_custom_type) {
@@ -32,11 +33,9 @@ int CustomEntry::map(IDAM_PLUGIN_INTERFACE* interface,
 }
 
 int CustomEntry::MASTU_helloworld(DATA_BLOCK* data_block) const {
-    return setReturnDataString(
-            data_block, "Hello World from MASTU", nullptr);
+    return setReturnDataString(data_block, "Hello World from MASTU", nullptr);
 }
 
 int CustomEntry::DRAFT_helloworld(DATA_BLOCK* data_block) const {
-    return setReturnDataString(
-            data_block, "Hello World from DRAFT", nullptr);
+    return setReturnDataString(data_block, "Hello World from DRAFT", nullptr);
 }

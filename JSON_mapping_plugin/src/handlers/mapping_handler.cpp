@@ -4,11 +4,11 @@
 #include <logging/logging.h>
 #include <unordered_map>
 
+#include "map_types/custom_entry.hpp"
 #include "map_types/dim_entry.hpp"
 #include "map_types/expr_entry.hpp"
 #include "map_types/map_entry.hpp"
 #include "map_types/slice_entry.hpp"
-#include "map_types/custom_entry.hpp"
 
 MappingPair MappingHandler::read_mappings(const std::string& request_ids) {
     // AJP :: Safety check if ids request not in mapping json (and typo
@@ -166,9 +166,8 @@ int MappingHandler::init_mappings(const std::string& ids_name,
         }
         case MapTransfos::CUSTOM: {
             temp_map_reg.try_emplace(
-                key,
-                std::make_unique<CustomEntry>(CustomEntry(
-                    value["CUSTOM_TYPE"].get<CustomMapType_t>())));
+                key, std::make_unique<CustomEntry>(CustomEntry(
+                         value["CUSTOM_TYPE"].get<CustomMapType_t>())));
             break;
         }
         default:
