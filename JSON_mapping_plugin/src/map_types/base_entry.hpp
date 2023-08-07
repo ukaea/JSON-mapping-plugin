@@ -5,12 +5,13 @@
 #include <plugins/pluginStructs.h>
 #include <plugins/udaPlugin.h>
 
-enum class MapTransfos { VALUE, PLUGIN, SLICE, EXPR, DIM };
+enum class MapTransfos { VALUE, PLUGIN, SLICE, EXPR, CUSTOM, DIM };
 
 NLOHMANN_JSON_SERIALIZE_ENUM(MapTransfos, {{MapTransfos::VALUE, "VALUE"},
                                            {MapTransfos::PLUGIN, "PLUGIN"},
                                            {MapTransfos::SLICE, "SLICE"},
                                            {MapTransfos::EXPR, "EXPR"},
+                                           {MapTransfos::CUSTOM, "CUSTOM"},
                                            {MapTransfos::DIM, "DIMENSION"}});
 
 enum class SignalType { DEFAULT, DATA, TIME, ERROR, DIM, INVALID };
