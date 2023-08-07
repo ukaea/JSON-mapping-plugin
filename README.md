@@ -28,6 +28,7 @@ cmake --build build-adam --target clang-format
 ### TODO:  
 - [ ] Add third-party licence information
 - [x] Reimplement exprtk MAP_TYPE
+- [x] Reimplement custom MAP_TYPE
 - [ ] Fix simple cache implementation (JH help)
 - [ ] Commit documentation for plugins AND mappings
 - [ ] Rework argument parsing when imas_plugin has been updated
