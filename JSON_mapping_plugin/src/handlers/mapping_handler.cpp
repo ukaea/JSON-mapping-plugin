@@ -154,13 +154,13 @@ int MappingHandler::init_mappings(const std::string& ids_name,
                          value["SIGNAL"].get<std::string>())));
             break;
         }
-        case MapTransfos::EXPR : {
-            temp_map_reg.try_emplace(key,
-                    std::make_unique<ExprEntry>(ExprEntry(
-                            value["EXPR"].get<std::string>(),
-                            value["PARAMETERS"].get<std::unordered_map<std::string,
-                            std::string>>()
-                        )));
+        case MapTransfos::EXPR: {
+            temp_map_reg.try_emplace(
+                key,
+                std::make_unique<ExprEntry>(ExprEntry(
+                    value["EXPR"].get<std::string>(),
+                    value["PARAMETERS"]
+                        .get<std::unordered_map<std::string, std::string>>())));
             break;
         }
         default:

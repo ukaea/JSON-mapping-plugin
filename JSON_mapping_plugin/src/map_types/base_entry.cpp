@@ -2,9 +2,9 @@
 #include "utils/uda_plugin_helpers.hpp"
 
 #include <algorithm>
+#include <boost/algorithm/string.hpp>
 #include <inja/inja.hpp>
 #include <unordered_map>
-#include <boost/algorithm/string.hpp>
 
 /**
  * @brief
@@ -12,11 +12,14 @@
  * @param nvlist
  * @return
  */
-int Mapping::set_current_request_data_map(std::unordered_map<std::string, std::string>& nvlist) {
+int Mapping::set_current_request_data_map(
+    std::unordered_map<std::string, std::string>& nvlist) {
 
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
-    if (nvlist.empty()) { return 1; }
+    if (nvlist.empty()) {
+        return 1;
+    }
 
     int err{0};
     std::vector<int> vec_indices;
@@ -25,19 +28,22 @@ int Mapping::set_current_request_data_map(std::unordered_map<std::string, std::s
     // Subtract 1 from each indices element, IMAS is 1-based
     // and other machines (MAST-intU for example) are zero-based
     std::for_each(vec_indices_str.begin(), vec_indices_str.end(),
-            [&](std::string& i_str) {
-                try {
-                    // Subtract 1 from each indices element, IMAS is 1-based
-                    // and other machines (MAST-U for example) are zero-based
-                    vec_indices.push_back(std::stoi(i_str) - 1);
-                    err = 0;
-                } catch (const std::invalid_argument& e) {
-                    UDA_LOG(UDA_LOG_DEBUG,
-                            "\nMapping::set_current_request_data_map - %s -"
-                            "Cannot convert string indices to int\n", e.what());
-                    err = 1;
-                }
-            });
+                  [&](std::string& i_str) {
+                      try {
+                          // Subtract 1 from each indices element, IMAS is
+                          // 1-based and other machines (MAST-U for example) are
+                          // zero-based
+                          vec_indices.push_back(std::stoi(i_str) - 1);
+                          err = 0;
+                      } catch (const std::invalid_argument& e) {
+                          UDA_LOG(
+                              UDA_LOG_DEBUG,
+                              "\nMapping::set_current_request_data_map - %s -"
+                              "Cannot convert string indices to int\n",
+                              e.what());
+                          err = 1;
+                      }
+                  });
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
