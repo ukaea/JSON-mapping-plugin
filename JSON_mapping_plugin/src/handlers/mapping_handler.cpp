@@ -5,10 +5,9 @@
 #include <unordered_map>
 
 #include "map_types/dim_entry.hpp"
+#include "map_types/expr_entry.hpp"
 #include "map_types/map_entry.hpp"
 #include "map_types/slice_entry.hpp"
-// #include <expr_entry.hpp>
-// #include <dim_entry.hpp>
 
 MappingPair MappingHandler::read_mappings(const std::string& request_ids) {
     // AJP :: Safety check if ids request not in mapping json (and typo
@@ -155,14 +154,15 @@ int MappingHandler::init_mappings(const std::string& ids_name,
                          value["SIGNAL"].get<std::string>())));
             break;
         }
-            // case MapTransfos::EXPR :
-            //     temp_map_reg.try_emplace(key,
-            //             std::make_unique<ExprEntry>(ExprEntry(
-            //                     value["EXPR"].get<std::string>(),
-            //                     value["PARAMETERS"].get<std::unordered_map<std::string,
-            //                     std::string>>()
-            //                 )));
-            //     break;
+        case MapTransfos::EXPR: {
+            temp_map_reg.try_emplace(
+                key,
+                std::make_unique<ExprEntry>(ExprEntry(
+                    value["EXPR"].get<std::string>(),
+                    value["PARAMETERS"]
+                        .get<std::unordered_map<std::string, std::string>>())));
+            break;
+        }
         default:
             break;
             // RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "

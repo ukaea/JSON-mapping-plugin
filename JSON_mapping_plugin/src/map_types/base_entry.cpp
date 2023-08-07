@@ -1,8 +1,62 @@
-#include "base_entry.hpp"
+#include "map_types/base_entry.hpp"
+#include "utils/uda_plugin_helpers.hpp"
 
+#include <algorithm>
+#include <boost/algorithm/string.hpp>
 #include <inja/inja.hpp>
-#include <string_view>
+#include <unordered_map>
 
+/**
+ * @brief
+ *
+ * @param nvlist
+ * @return
+ */
+int Mapping::set_current_request_data_map(
+    std::unordered_map<std::string, std::string>& nvlist) {
+
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+    if (nvlist.empty()) {
+        return 1;
+    }
+
+    int err{0};
+    std::vector<int> vec_indices;
+    std::vector<std::string> vec_indices_str;
+    boost::split(vec_indices_str, nvlist.at("indices"), boost::is_any_of(";"));
+    // Subtract 1 from each indices element, IMAS is 1-based
+    // and other machines (MAST-intU for example) are zero-based
+    std::for_each(vec_indices_str.begin(), vec_indices_str.end(),
+                  [&](std::string& i_str) {
+                      try {
+                          // Subtract 1 from each indices element, IMAS is
+                          // 1-based and other machines (MAST-U for example) are
+                          // zero-based
+                          vec_indices.push_back(std::stoi(i_str) - 1);
+                          err = 0;
+                      } catch (const std::invalid_argument& e) {
+                          UDA_LOG(
+                              UDA_LOG_DEBUG,
+                              "\nMapping::set_current_request_data_map - %s -"
+                              "Cannot convert string indices to int\n",
+                              e.what());
+                          err = 1;
+                      }
+                  });
+
+    // Set request info
+    // Replace hardcoded values after IMAS-plugin request change
+    m_request_data.host = "uda2.hpc.l";
+    m_request_data.port = 56565;
+    m_request_data.shot = std::stoi(nvlist.at("shot")); // ask forgiveness
+    m_request_data.indices = vec_indices;
+    m_request_data.sig_type = SignalType::DEFAULT;
+    //////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////
+
+    return err;
+}
 /**
  * @brief
  *

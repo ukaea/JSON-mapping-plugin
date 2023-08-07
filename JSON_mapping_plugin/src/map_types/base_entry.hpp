@@ -1,5 +1,4 @@
 #pragma once
-#include "utils/uda_plugin_helpers.hpp"
 
 #include <clientserver/udaStructs.h>
 #include <nlohmann/json.hpp>
@@ -28,6 +27,8 @@ class Mapping {
         return m_request_data.indices;
     }
     int set_current_request_data(NAMEVALUELIST* nvlist);
+    int set_current_request_data_map(
+        std::unordered_map<std::string, std::string>& nvlist);
     int set_sig_type(SignalType sig_type) {
         m_request_data.sig_type = sig_type;
         return 0;

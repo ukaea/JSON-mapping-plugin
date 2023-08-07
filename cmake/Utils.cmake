@@ -16,9 +16,6 @@ function(add_clang_format_target)
     endif()
 
     if(${PROJECT_NAME}_CLANG_FORMAT_BINARY)
-        message(STATUS "CLANG BINARY: ${${PROJECT_NAME}_CLANG_FORMAT_BINARY}")
-        message(STATUS "CLANG SOURCES: ${SOURCES}")
-        message(STATUS "CLANG HEADERS: ${HEADERS}")
         add_custom_target(clang-format
             COMMAND ${${PROJECT_NAME}_CLANG_FORMAT_BINARY}
             -i --verbose ${SOURCES} ${HEADERS}

@@ -8,6 +8,7 @@ set(SOURCES
     src/map_types/map_entry.cpp
     src/map_types/dim_entry.cpp
     src/map_types/slice_entry.cpp
+    src/map_types/expr_entry.cpp
     src/utils/uda_plugin_helpers.cpp
     src/utils/scale_offset.cpp
 )
@@ -24,8 +25,8 @@ set(HEADERS
     src/map_types/map_entry.hpp
     src/map_types/dim_entry.hpp
     src/map_types/slice_entry.hpp
+    src/map_types/expr_entry.hpp
     src/utils/uda_plugin_helpers.hpp
-    src/utils/DRaFT_plugin_helpers.hpp
     src/utils/scale_offset.hpp
 )
 

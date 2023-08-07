@@ -33,7 +33,7 @@ class MappingHandler {
         load_all();
 
         m_init = true;
-        return 1;
+        return 0;
     };
     int set_map_dir(const std::string& mapping_dir);
     MappingPair read_mappings(const std::string& request_ids);
