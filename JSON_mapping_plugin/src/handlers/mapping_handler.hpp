@@ -5,11 +5,10 @@
 #include <string>
 #include <unordered_map>
 
-#include "map_types/base_entry.hpp"
+#include "map_types/base_mapping.hpp"
 #include <nlohmann/json.hpp>
 
-using IDSMapRegister_t =
-    std::unordered_map<std::string, std::unique_ptr<Mapping>>;
+using IDSMapRegister_t = std::unordered_map<std::string, std::unique_ptr<Mapping>>;
 using IDSMapRegisterStore_t = std::unordered_map<std::string, IDSMapRegister_t>;
 using IDSAttrRegisterStore_t = std::unordered_map<std::string, nlohmann::json>;
 using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
@@ -18,14 +17,14 @@ class MappingHandler {
 
   public:
     MappingHandler() : m_init(false), m_imas_version("3.37"){};
-    explicit MappingHandler(std::string imas_version)
-        : m_init(false), m_imas_version(std::move(imas_version)){};
-    ~MappingHandler() {
+    explicit MappingHandler(std::string imas_version) : m_init(false), m_imas_version(std::move(imas_version)){};
+    int reset() {
         m_ids_attributes.clear();
         m_ids_map_register.clear();
         m_mapping_config.clear();
         m_init = false;
-    }
+        return 0;
+    };
     int init() {
         if (m_init || !m_ids_map_register.empty()) {
             return 0;
@@ -36,7 +35,7 @@ class MappingHandler {
         return 0;
     };
     int set_map_dir(const std::string& mapping_dir);
-    MappingPair read_mappings(const std::string& request_ids);
+    MappingPair read_mappings(const std::string& machine, const std::string& request_ids);
 
   private:
     int init_mappings(const std::string& ids_name, const nlohmann::json& data);

@@ -1,26 +1,19 @@
-#include "map_types/slice_entry.hpp"
+#include "map_types/slice_mapping.hpp"
 #include "utils/uda_plugin_helpers.hpp"
 #include <algorithm>
 #include <inja/inja.hpp>
 #include <plugins/udaPlugin.h>
 
-int SliceEntry::map(
-    IDAM_PLUGIN_INTERFACE* interface,
-    const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-    const nlohmann::json& json_globals) const {
+int SliceMapping::map(const MapArguments& arguments) const {
 
-    int err{1};
-    if (!entries.at(m_slice_key)
-             ->set_current_request_data(
-                 &interface->request_data->nameValueList) &&
-        !entries.at(m_slice_key)->map(interface, entries, json_globals)) {
-        err = map_slice(interface->data_block, json_globals);
+    int err = arguments.m_entries.at(m_slice_key)->map(arguments);
+    if (err == 0) {
+        err = map_slice(arguments.m_interface->data_block, arguments.m_global_data);
     }
     return err;
 };
 
-int SliceEntry::map_slice(DataBlock* data_block,
-                          const nlohmann::json& json_globals) const {
+int SliceMapping::map_slice(DataBlock* data_block, const nlohmann::json& json_globals) const {
 
     int len_array{data_block->data_n / data_block->dims->dim_n};
     int err{1};

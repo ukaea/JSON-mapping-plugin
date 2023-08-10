@@ -1,35 +1,16 @@
-/*---------------------------------------------------------------
-* v1 UDA Plugin Template: Standardised plugin design template, just add ...
-*
-* Input Arguments:    IDAM_PLUGIN_INTERFACE *interface
-*
-* Returns:        0 if the plugin functionality was successful
-*            otherwise a Error Code is returned
-*
-* Standard functionality:
-*
-*    help    a description of what this plugin does together with a list of functions available
-*
-*    reset    frees all previously allocated heap, closes file handles and resets all static parameters.
-*        This has the same functionality as setting the housekeeping directive in the plugin interface
-*        data structure to TRUE (1)
-*
-*    init    Initialise the plugin: read all required data and process. Retain staticly for
-*        future reference.
-*
-*---------------------------------------------------------------------------------------------------------------*/
 #include "DRaFT_data_reader.h"
+
 #include <clientserver/udaStructs.h>
 #include <clientserver/udaTypes.h>
 #include <logging/logging.h>
 #include <plugins/udaPlugin.h>
+#include <clientserver/stringUtils.h>
+#include <clientserver/initStructs.h>
 
 #ifdef __GNUC__
 #  include <strings.h>
 #endif
 
-#include <clientserver/stringUtils.h>
-#include <clientserver/initStructs.h>
 #include <fstream>
 #include "nlohmann/json.hpp"
 
@@ -187,7 +168,7 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
     }
 
     return 0;
-}   
+}
 
 nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string signal, int shot) {
 
@@ -269,7 +250,7 @@ int DRaFTDataReader(IDAM_PLUGIN_INTERFACE* plugin_interface) {
             return plugin.get(plugin_interface);
         } else {
             RAISE_PLUGIN_ERROR("Unknown function requested!");
-        } 
+        }
     } catch (const std::exception& ex) {
         RAISE_PLUGIN_ERROR(ex.what());
     }

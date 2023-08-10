@@ -3,7 +3,7 @@
  * @brief
  */
 
-#include "map_entry.hpp"
+#include "plugin_mapping.hpp"
 
 #include "utils/scale_offset.hpp"
 #include "utils/uda_plugin_helpers.hpp"
@@ -13,8 +13,7 @@
 /**
  * @brief
  *
- * eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460,
- *              host=uda2.hpc.l, port=56565)
+ * eg. UDA::get(signal=/AMC/ROGEXT/P1U, source=45460, host=uda2.hpc.l, port=56565)
  * eg. GEOM::get(signal=/magnetics/pfcoil/d1_upper, Config=1);
  * eg. JSONDataReader::get(signal=/APC/plasma_current);
  *
@@ -22,7 +21,7 @@
  * @return
  */
 std::string
-MapEntry::get_request_str(const nlohmann::json& json_globals) const {
+PluginMapping::get_request_str(const MapArguments& arguments) const {
 
     // TODO: replace dependence on boost in the future
     // stringstream?
@@ -36,8 +35,8 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
             request_str +=
                 (boost::format("%s=%s, ") % key %
                  inja::render( // Double inja
-                     inja::render(field.get<std::string>(), json_globals),
-                     json_globals))
+                     inja::render(field.get<std::string>(), arguments.m_global_data),
+                     arguments.m_global_data))
                     .str();
         } else if (field.is_boolean()) {
             request_str += (boost::format("%s, ") % key).str();
@@ -45,10 +44,10 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
             continue;
         }
     }
-    request_str +=
-        (boost::format("source=%i, host=%s, port=%i)") % m_request_data.shot %
-         m_request_data.host % m_request_data.port)
-            .str();
+
+    // TODO: shouldn't need this as all of this should come from the JSON globals for the plugin type
+//    request_str +=
+//        (boost::format("source=%i, host=%s, port=%i)") % arguments.m_shot % arguments.m_host % arguments.m_port).str();
 
     // Add slice to request (when implemented)
     // if (m_slice.has_value()) {
@@ -59,46 +58,39 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
     return request_str;
 }
 
-int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
-                           const nlohmann::json& json_globals) const {
+int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     int err{1};
-    auto request_str = get_request_str(json_globals);
+    auto request_str = get_request_str(arguments);
     if (request_str.empty()) {
         return err;
     } // Return 1 if no request receieved
 
-    err = callPlugin(interface->pluginList, request_str.c_str(), interface);
+    err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
     if (err) {
         return err;
     } // return code if failure, no need to proceed
 
-    if (m_request_data.sig_type == SignalType::TIME) {
+    if (arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
         if (m_plugin.first == PluginType::UDA) {
-            err = imas_json_plugin::uda_helpers::setReturnTimeArray(
-                interface->data_block);
+            err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
         }
         return err;
     }
 
     if (m_scale.has_value()) {
-        err = JMP::map_transform::transform_scale(interface->data_block,
-                                                  m_scale.value());
+        err = JMP::map_transform::transform_scale(arguments.m_interface->data_block, m_scale.value());
     }
     if (m_offset.has_value()) {
-        err = JMP::map_transform::transform_offset(interface->data_block,
-                                                   m_offset.value());
+        err = JMP::map_transform::transform_offset(arguments.m_interface->data_block, m_offset.value());
     }
 
     return err;
 }
 
-int MapEntry::map(
-    IDAM_PLUGIN_INTERFACE* interface,
-    const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-    const nlohmann::json& json_globals) const {
+int PluginMapping::map(const MapArguments& arguments) const {
 
-    return call_plugins(interface, json_globals);
+    return call_plugins(arguments);
 };

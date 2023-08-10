@@ -1,6 +1,6 @@
 #pragma once
 
-#include "map_types/base_entry.hpp"
+#include "map_types/base_mapping.hpp"
 #include "utils/uda_plugin_helpers.hpp"
 
 #include <algorithm>
@@ -12,8 +12,8 @@
 #include <unordered_map>
 
 /**
- * @class ExprEntry
- * @brief ExprEntry class to the hold the EXPR MAP_TYPE after parsing from the
+ * @class ExprMapping
+ * @brief ExprMapping class to the hold the EXPR MAP_TYPE after parsing from the
  * JSON mapping file
  *
  * The class holds an expression std::string 'm_expr' for evaluation and
@@ -29,27 +29,20 @@
  * retrieved regardless of the expression operation.
  *
  */
-class ExprEntry : public Mapping {
+class ExprMapping : public Mapping {
   public:
-    ExprEntry() = delete;
-    ExprEntry(std::string expr,
-              std::unordered_map<std::string, std::string> parameters)
+    ExprMapping() = delete;
+    ExprMapping(std::string expr, std::unordered_map<std::string, std::string> parameters)
         : m_expr{std::move(expr)}, m_parameters{std::move(parameters)} {};
 
-    int map(IDAM_PLUGIN_INTERFACE* interface,
-            const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
-                entries,
-            const nlohmann::json& global_data) const override;
+    int map(const MapArguments& arguments) const override;
 
   private:
     std::string m_expr;
     std::unordered_map<std::string, std::string> m_parameters;
 
     template <typename T>
-    int eval_expr(IDAM_PLUGIN_INTERFACE* interface,
-                  const std::unordered_map<std::string,
-                                           std::unique_ptr<Mapping>>& entries,
-                  const nlohmann::json& global_data) const;
+    int eval_expr(const MapArguments& arguments) const;
 };
 
 /**
@@ -70,21 +63,18 @@ class ExprEntry : public Mapping {
  * @return int error_code
  */
 template <typename T>
-int ExprEntry::eval_expr(
-    IDAM_PLUGIN_INTERFACE* out_interface,
-    const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-    const nlohmann::json& global_data) const {
+int ExprMapping::eval_expr(const MapArguments& arguments) const {
 
     exprtk::symbol_table<T> symbol_table;
     exprtk::expression<T> expression;
     exprtk::parser<T> parser;
 
     // Copy original request name-value list to map (simplicity)
-    std::unordered_map<std::string, std::string> orig_nvlist_map;
-    const auto* orig_nvlist = &out_interface->request_data->nameValueList;
-    for (int i = 0; i < orig_nvlist->pairCount; i++) {
-        orig_nvlist_map.insert(
-            {orig_nvlist->nameValue[i].name, orig_nvlist->nameValue[i].value});
+    std::unordered_map<std::string, std::string> orig_nv_list_map;
+    const auto* orig_nv_list = &arguments.m_interface->request_data->nameValueList;
+    for (int i = 0; i < orig_nv_list->pairCount; i++) {
+        orig_nv_list_map.insert(
+            {orig_nv_list->nameValue[i].name, orig_nv_list->nameValue[i].value});
     }
 
     std::vector<char*> parameters_ptrs(m_parameters.size());
@@ -95,31 +85,29 @@ int ExprEntry::eval_expr(
     symbol_table.add_constants();
     for (const auto& [key, json_name] : m_parameters) {
 
-        initDataBlock(out_interface->data_block); // Reset datablock per param
-        entries.at(json_name)->set_current_request_data_map(orig_nvlist_map);
-        // Should really set data type also
-        entries.at(json_name)->map(out_interface, entries, global_data);
+        initDataBlock(arguments.m_interface->data_block); // Reset datablock per param
+        arguments.m_entries.at(json_name)->map(arguments);
 
         // No data for expr parameters, cannot evaluate, return 1;
-        if (!out_interface->data_block->data) {
+        if (!arguments.m_interface->data_block->data) {
             return 1;
         }
 
-        if (out_interface->data_block->data_n > 0) {
+        if (arguments.m_interface->data_block->data_n > 0) {
             symbol_table.add_vector(
-                key, reinterpret_cast<T*>(out_interface->data_block->data),
-                out_interface->data_block->data_n);
+                key, reinterpret_cast<T*>(arguments.m_interface->data_block->data),
+                arguments.m_interface->data_block->data_n);
             if (first_vec_param) {
-                result_size = out_interface->data_block->data_n;
+                result_size = arguments.m_interface->data_block->data_n;
                 first_vec_param = false;
             }
             vector_expr = true;
         } else {
             symbol_table.add_variable(
-                key, *reinterpret_cast<T*>(out_interface->data_block->data));
+                key, *reinterpret_cast<T*>(arguments.m_interface->data_block->data));
         }
         // Collect vectors for deletion later
-        parameters_ptrs.push_back(out_interface->data_block->data);
+        parameters_ptrs.push_back(arguments.m_interface->data_block->data);
     }
 
     std::vector<T> result(result_size);
@@ -130,17 +118,15 @@ int ExprEntry::eval_expr(
     }
     expression.register_symbol_table(symbol_table);
 
-    // replace patterns in expression if necessary, eg expression: RESULT:=X+Y
-    std::string expr_string{"RESULT:=" + inja::render(m_expr, global_data)};
+    // replace patterns in expression if necessary, e.g. expression: RESULT:=X+Y
+    std::string expr_string{"RESULT:=" + inja::render(m_expr, arguments.m_global_data)};
     parser.compile(expr_string, expression);
     expression.value(); // Evaluate expression
 
     if (vector_expr) {
-        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec(
-            out_interface->data_block, result);
+        imas_json_plugin::uda_helpers::setReturnDataArrayType_Vec(arguments.m_interface->data_block, result);
     } else {
-        imas_json_plugin::uda_helpers::setReturnDataScalarType(
-            out_interface->data_block, result.at(0));
+        imas_json_plugin::uda_helpers::setReturnDataScalarType(arguments.m_interface->data_block, result.at(0));
     }
 
     // Free parameter memory from subsequent data_block requests

@@ -25,7 +25,7 @@ uda_plugin(
     DESCRIPTION "MAP IMAS element name to TOKAMAK data using JSON mapping files"
     EXAMPLE "IMAS_JSON_MAP::read()"
     LIBNAME ${JSON_LIBNAME}
-    SOURCES ${SOURCES} 
+    SOURCES ${SOURCES} ${HEADERS}
     CONFIG_FILE ${CONFIGS}
     EXTRA_INCLUDE_DIRS
       ${UDA_CLIENT_INCLUDE_DIRS}
