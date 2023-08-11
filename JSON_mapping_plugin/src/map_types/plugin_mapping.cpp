@@ -20,12 +20,11 @@
  * @param json_globals
  * @return
  */
-std::string
-PluginMapping::get_request_str(const MapArguments& arguments) const {
+std::string PluginMapping::get_request_str(const MapArguments& arguments) const {
 
     // TODO: replace dependence on boost in the future
     // stringstream?
-    std::string request_str = m_plugin.second + "::get(";
+    std::string request_str = m_plugin + "::get(";
 
     // m_map_args 'field' currently nlohmann json
     // parse to string/bool
@@ -35,8 +34,7 @@ PluginMapping::get_request_str(const MapArguments& arguments) const {
             request_str +=
                 (boost::format("%s=%s, ") % key %
                  inja::render( // Double inja
-                     inja::render(field.get<std::string>(), arguments.m_global_data),
-                     arguments.m_global_data))
+                     inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data))
                     .str();
         } else if (field.is_boolean()) {
             request_str += (boost::format("%s, ") % key).str();
@@ -46,8 +44,9 @@ PluginMapping::get_request_str(const MapArguments& arguments) const {
     }
 
     // TODO: shouldn't need this as all of this should come from the JSON globals for the plugin type
-//    request_str +=
-//        (boost::format("source=%i, host=%s, port=%i)") % arguments.m_shot % arguments.m_host % arguments.m_port).str();
+    //    request_str +=
+    //        (boost::format("source=%i, host=%s, port=%i)") % arguments.m_shot % arguments.m_host %
+    //        arguments.m_port).str();
 
     // Add slice to request (when implemented)
     // if (m_slice.has_value()) {
@@ -74,9 +73,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     if (arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
-        if (m_plugin.first == PluginType::UDA) {
-            err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
-        }
+        err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
         return err;
     }
 
@@ -90,7 +87,4 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     return err;
 }
 
-int PluginMapping::map(const MapArguments& arguments) const {
-
-    return call_plugins(arguments);
-};
+int PluginMapping::map(const MapArguments& arguments) const { return call_plugins(arguments); };

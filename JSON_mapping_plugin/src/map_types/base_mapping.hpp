@@ -28,5 +28,3 @@ class Mapping {
 
     virtual int map(const MapArguments& arguments) const = 0;
 };
-
-

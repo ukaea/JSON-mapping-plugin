@@ -18,8 +18,7 @@ template <typename T> int offset_span(gsl::span<T> temp_span, float offset) {
         return 1;
     }
 
-    std::for_each(temp_span.begin(), temp_span.end(),
-                  [&offset](T& elem) { elem += offset; });
+    std::for_each(temp_span.begin(), temp_span.end(), [&offset](T& elem) { elem += offset; });
 
     return 0;
 };
@@ -36,8 +35,7 @@ template <typename T> int scale_span(gsl::span<T> temp_span, float scale) {
         return 1;
     }
 
-    std::for_each(temp_span.begin(), temp_span.end(),
-                  [&scale](T& elem) { elem *= scale; });
+    std::for_each(temp_span.begin(), temp_span.end(), [&scale](T& elem) { elem *= scale; });
 
     return 0;
 };

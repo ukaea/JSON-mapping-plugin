@@ -1,34 +1,30 @@
 #include "DRaFT_data_reader.h"
 
+#include <clientserver/initStructs.h>
+#include <clientserver/stringUtils.h>
 #include <clientserver/udaStructs.h>
 #include <clientserver/udaTypes.h>
 #include <logging/logging.h>
 #include <plugins/udaPlugin.h>
-#include <clientserver/stringUtils.h>
-#include <clientserver/initStructs.h>
 
 #ifdef __GNUC__
-#  include <strings.h>
+#include <strings.h>
 #endif
 
-#include <fstream>
 #include "nlohmann/json.hpp"
+#include <fstream>
 
 class DRaFTDataReaderPlugin {
-public:
-    void init(IDAM_PLUGIN_INTERFACE* plugin_interface)
-    {
+  public:
+    void init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         REQUEST_DATA* request = plugin_interface->request_data;
-        if (!init_
-                || STR_IEQUALS(request->function, "init")
-                || STR_IEQUALS(request->function, "initialise")) {
+        if (!init_ || STR_IEQUALS(request->function, "init") || STR_IEQUALS(request->function, "initialise")) {
             reset(plugin_interface);
             // Initialise plugin
             init_ = true;
         }
     }
-    void reset(IDAM_PLUGIN_INTERFACE* plugin_interface)
-    {
+    void reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         if (!init_) {
             // Not previously initialised: Nothing to do!
             return;
@@ -44,10 +40,10 @@ public:
     int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
-private:
+  private:
     int return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string signal);
-    int return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, std::string signal);
-    nlohmann::json read_json_data(std::string signal, int shot);
+    int return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, const std::string& signal);
+    nlohmann::json read_json_data(const std::string& signal, int shot);
     bool init_ = false;
 };
 
@@ -67,7 +63,7 @@ int DRaFTDataReaderPlugin::get(IDAM_PLUGIN_INTERFACE* interface) {
     FIND_REQUIRED_INT_VALUE(request_data->nameValueList, source);
     const char* signal{nullptr};
     FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, signal);
-    std::string signal_str{signal};
+    std::string const signal_str{signal};
     bool time_sig{false}; // False by default
     // FIND_INT_VALUE(request_data->nameValueList, time_sig); // TO FIX
     if (signal_str.find("time") != std::string::npos) {
@@ -78,18 +74,16 @@ int DRaFTDataReaderPlugin::get(IDAM_PLUGIN_INTERFACE* interface) {
     // (1) access experiment data
     // (2) deduce rank + type (if applicable)
     // (3) set return data (may be dependent on time or data)
-    return time_sig ?
-        return_DRaFT_data_time(interface->data_block, source, signal_str) :
-        return_DRaFT_data(interface->data_block, source, signal_str);
+    return time_sig ? return_DRaFT_data_time(interface->data_block, source, signal_str)
+                    : return_DRaFT_data(interface->data_block, source, signal_str);
 }
 
-int DRaFTDataReaderPlugin::return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, std::string signal) {
+int DRaFTDataReaderPlugin::return_DRaFT_data_time(DATA_BLOCK* data_block, int shot, const std::string& signal) {
 
     const auto data = read_json_data(signal, shot);
     auto vec_values = data.get<std::vector<float>>();
     const size_t shape{vec_values.size()};
-    int err = setReturnDataFloatArray(data_block, vec_values.data(),
-                                    1, &shape, nullptr);
+    int err = setReturnDataFloatArray(data_block, vec_values.data(), 1, &shape, nullptr);
     // Cleanup to make things behave
     data_block->order = -1;
     data_block->dims[0].dim = nullptr;
@@ -98,22 +92,19 @@ int DRaFTDataReaderPlugin::return_DRaFT_data_time(DATA_BLOCK* data_block, int sh
     data_block->dims[0].method = 0;
     data_block->dims[0].dim0 = 0.0;
     data_block->dims[0].diff = 1.0;
-    return 0;
-
+    return err;
 }
 
 int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string signal) {
 
     int err{1};
     const auto data = read_json_data(signal, shot);
-    const auto type = read_json_data(signal+"_type", shot).get<std::string>();
-    const auto rank = read_json_data(signal+"_rank", shot).get<int>();
+    const auto type = read_json_data(signal + "_type", shot).get<std::string>();
+    const auto rank = read_json_data(signal + "_rank", shot).get<int>();
 
-    const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{
-        {typeid(int).name(), UDA_TYPE_INT},
-        {typeid(float).name(), UDA_TYPE_FLOAT},
-        {typeid(double).name(), UDA_TYPE_DOUBLE}
-    };
+    const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{{typeid(int).name(), UDA_TYPE_INT},
+                                                                 {typeid(float).name(), UDA_TYPE_FLOAT},
+                                                                 {typeid(double).name(), UDA_TYPE_DOUBLE}};
 
     // All DRaFT data is rank 1 : other experiments would need to expand
     if (rank > 0) {
@@ -121,30 +112,26 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
         case UDA_TYPE_INT: {
             auto vec_values = data.get<std::vector<int>>();
             const size_t shape{vec_values.size()};
-            err = setReturnDataIntArray(data_block, vec_values.data(),
-                                        rank, &shape, nullptr);
+            err = setReturnDataIntArray(data_block, vec_values.data(), rank, &shape, nullptr);
             break;
         }
         case UDA_TYPE_FLOAT: {
             auto vec_values = data.get<std::vector<float>>();
             const size_t shape{vec_values.size()};
-            err = setReturnDataFloatArray(data_block, vec_values.data(),
-                                          rank, &shape, nullptr);
+            err = setReturnDataFloatArray(data_block, vec_values.data(), rank, &shape, nullptr);
             break;
         }
         case UDA_TYPE_DOUBLE: {
             auto vec_values = data.get<std::vector<double>>();
             const size_t shape{vec_values.size()};
-            err = setReturnDataDoubleArray(data_block, vec_values.data(),
-                                           rank, &shape, nullptr);
+            err = setReturnDataDoubleArray(data_block, vec_values.data(), rank, &shape, nullptr);
             break;
         }
-        default: {
+        default:
             break;
-        }}
+        }
 
     } else if (rank == 0) {
-
         switch (UDA_TYPE_MAP.at(type)) {
         case UDA_TYPE_INT: {
             auto value = data.get<int>();
@@ -161,19 +148,18 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
             err = setReturnDataDoubleScalar(data_block, value, nullptr);
             break;
         }
-        default: {
+        default:
             break;
-        }
         }
     }
 
-    return 0;
+    return err;
 }
 
-nlohmann::json DRaFTDataReaderPlugin::read_json_data(std::string signal, int shot) {
+nlohmann::json DRaFTDataReaderPlugin::read_json_data(const std::string& signal, int shot) {
 
-    std::string map_dir = getenv("DRaFT_DATA_DIR");
-    std::string data_path = map_dir + "/" + std::to_string(shot) + ".json";
+    std::string const map_dir = getenv("DRaFT_DATA_DIR");
+    std::string const data_path = map_dir + "/" + std::to_string(shot) + ".json";
     std::ifstream json_file(data_path);
     auto temp_json = nlohmann::json::parse(json_file);
     json_file.close();
@@ -203,8 +189,8 @@ int DRaFTDataReader(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     // Plugin must maintain a list of open file handles and sockets: loop over and close all files and sockets
     // Plugin must maintain a list of plugin functions called: loop over and reset state and free heap.
-    // Plugin must maintain a list of calls to other plugins: loop over and call each plugin with the housekeeping request
-    // Plugin must destroy lists at end of housekeeping
+    // Plugin must maintain a list of calls to other plugins: loop over and call each plugin with the housekeeping
+    // request Plugin must destroy lists at end of housekeeping
 
     // A plugin only has a single instance on a server. For multiple instances, multiple servers are needed.
     // Plugins can maintain state so recursive calls (on the same server) must respect this.
@@ -224,8 +210,7 @@ int DRaFTDataReader(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         //----------------------------------------------------------------------------------------
         // Initialise
         plugin.init(plugin_interface);
-        if (STR_IEQUALS(plugin_func, "init")
-            || STR_IEQUALS(plugin_func, "initialise")) {
+        if (STR_IEQUALS(plugin_func, "init") || STR_IEQUALS(plugin_func, "initialise")) {
             return 0;
         }
 

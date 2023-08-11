@@ -11,10 +11,19 @@
 #include "map_types/slice_mapping.hpp"
 #include "map_types/value_mapping.hpp"
 
-MappingPair MappingHandler::read_mappings(const std::string& machine, const std::string& request_ids) {
+std::optional<MappingPair> MappingHandler::read_mappings(const MachineName_t& machine, const std::string& request_ids) {
+    load_machine(machine);
+    if (m_machine_register.count(machine) == 0) {
+        return {};
+    }
+    auto& [mappings, attributes] = m_machine_register[machine];
+    if (mappings.count(request_ids) == 0 || attributes.count(request_ids) == 0) {
+        return {};
+    }
     // AJP :: Safety check if ids request not in mapping json (and typo
     // obviously)
-    return std::make_pair(std::ref(m_ids_attributes[request_ids]), std::ref(m_ids_map_register[request_ids]));
+    return std::optional<MappingPair>{
+        std::make_pair(std::ref(attributes[request_ids]), std::ref(mappings[request_ids]))};
 }
 
 int MappingHandler::set_map_dir(const std::string& mapping_dir) {
@@ -22,27 +31,43 @@ int MappingHandler::set_map_dir(const std::string& mapping_dir) {
     return 0;
 }
 
-int MappingHandler::load_all() {
+std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDSName_t& ids_name,
+                                         const std::string& file_name) {
+    if (ids_name.empty()) {
+        return m_mapping_dir + "/" + machine + "/" + file_name;
+    } else {
+        return m_mapping_dir + "/mappings/" + machine + "/" + ids_name + "/" + file_name;
+    }
+}
 
-    std::ifstream map_cfg_file(m_mapping_dir + "/mappings.cfg.json");
+int MappingHandler::load_machine(const MachineName_t& machine) {
+    if (m_machine_register.count(machine) == 1) {
+        // machine already loaded
+        return 0;
+    }
+
+    auto file_path = mapping_path(machine, "", "mappings.cfg.json");
+
+    std::ifstream map_cfg_file(file_path);
     if (map_cfg_file) {
         map_cfg_file >> m_mapping_config;
-        map_cfg_file.close();
     } else {
         RAISE_PLUGIN_ERROR("MappingHandler::load_configs - Cannot open JSON mapping config file");
     }
 
-    for (const auto& ids_str : m_mapping_config[m_imas_version].get<std::vector<std::string>>()) {
-        load_globals(ids_str);
-        load_mappings(ids_str);
+    m_machine_register[machine] = {{}, {}};
+
+    for (const auto& ids_name : m_mapping_config[m_dd_version].get<std::vector<std::string>>()) {
+        load_globals(machine, ids_name);
+        load_mappings(machine, ids_name);
     }
 
     return 0;
 }
 
-int MappingHandler::load_globals(const std::string& ids_str) {
+int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& ids_name) {
 
-    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" + "globals.json"};
+    auto file_path = mapping_path(machine, ids_name, "globals.json");
 
     std::ifstream globals_file;
     globals_file.open(file_path);
@@ -51,14 +76,12 @@ int MappingHandler::load_globals(const std::string& ids_str) {
         try {
             globals_file >> temp_globals;
         } catch (nlohmann::json::exception& ex) {
-            globals_file.close();
             std::string json_error{"MappingHandler::load_globals - "};
             json_error.append(ex.what());
             RAISE_PLUGIN_ERROR(json_error.c_str());
         }
-        globals_file.close();
 
-        m_ids_attributes[ids_str] = temp_globals; // Record globals
+        m_machine_register[machine].attributes[ids_name] = temp_globals; // Record globals
 
     } else {
         RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open JSON globals file");
@@ -66,9 +89,9 @@ int MappingHandler::load_globals(const std::string& ids_str) {
     return 0;
 }
 
-int MappingHandler::load_mappings(const std::string& ids_str) {
+int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t& ids_name) {
 
-    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" + "mappings.json"};
+    auto file_path = mapping_path(machine, ids_name, "mappings.json");
 
     std::ifstream map_file;
     map_file.open(file_path);
@@ -77,79 +100,114 @@ int MappingHandler::load_mappings(const std::string& ids_str) {
         try {
             map_file >> temp_mappings;
         } catch (nlohmann::json::exception& ex) {
-            map_file.close();
             std::string json_error{"MappingHandler::load_mappings - "};
             json_error.append(ex.what());
             RAISE_PLUGIN_ERROR(json_error.c_str());
         }
-        map_file.close();
 
-        init_mappings(ids_str, temp_mappings);
+        init_mappings(machine, ids_name, temp_mappings);
     } else {
         RAISE_PLUGIN_ERROR("MappingHandler::load_mappings - Cannot open JSON mapping file");
     }
     return 0;
 }
 
-int MappingHandler::init_mappings(const std::string& ids_name, const nlohmann::json& data) {
+int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+    map_reg.try_emplace(key, std::make_unique<ValueMapping>(ValueMapping(value["VALUE"])));
+    return 0;
+}
 
+int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
+                                        nlohmann::json ids_attributes) {
+    // Structured bindings lambda capture bug, json passed as argument
+    auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
+        std::optional<float> opt_float{std::nullopt};
+        if (value_local.contains(var_str) and !value_local[var_str].is_null()) {
+            if (value_local[var_str].is_number_float()) {
+                opt_float = value_local[var_str].get<float>();
+            } else if (value_local[var_str].is_string()) {
+                try {
+                    const auto post_inja_str = inja::render(value_local[var_str].get<std::string>(), ids_attributes);
+                    opt_float = std::stof(post_inja_str);
+                } catch (const std::invalid_argument& e) {
+                    UDA_LOG(UDA_LOG_DEBUG, "\nCannot convert OFFSET/SCALE string to float\n");
+                }
+            }
+        }
+        return opt_float;
+    };
+
+    auto plugin_name = value["PLUGIN"].get<std::string>();
+    auto args = value["ARGS"].get<MapArgs_t>();
+
+    if (ids_attributes.count("PLUGIN_ARGS")) {
+        const auto& plugin_args_map = ids_attributes["PLUGIN_ARGS"].get<nlohmann::json>();
+        if (plugin_args_map.count(plugin_name)) {
+            const auto& plugin_args = plugin_args_map[plugin_name].get<nlohmann::json>();
+            for (const auto& [name, arg] : plugin_args.items()) {
+                if (args.count(name) == 0) {
+                    // don't overwrite mapping arguments with global values
+                    args[name] = arg;
+                }
+            }
+        }
+    }
+
+    map_reg.try_emplace(
+        key, std::make_unique<PluginMapping>(PluginMapping(plugin_name, args, get_offset_scale("OFFSET", value),
+                                                           get_offset_scale("SCALE", value))));
+    return 0;
+}
+
+int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+    map_reg.try_emplace(key, std::make_unique<DimMapping>(DimMapping(value["DIM_PROBE"].get<std::string>())));
+    return 0;
+}
+
+int MappingHandler::init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+    map_reg.try_emplace(
+        key, std::make_unique<SliceMapping>(SliceMapping(value["SLICE_INDEX"].get<std::vector<std::string>>(),
+                                                         value["SIGNAL"].get<std::string>())));
+    return 0;
+}
+
+int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+    map_reg.try_emplace(key, std::make_unique<ExprMapping>(
+                                 ExprMapping(value["EXPR"].get<std::string>(),
+                                             value["PARAMETERS"].get<std::unordered_map<std::string, std::string>>())));
+    return 0;
+}
+
+int MappingHandler::init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+    map_reg.try_emplace(key,
+                        std::make_unique<CustomMapping>(CustomMapping(value["CUSTOM_TYPE"].get<CustomMapType_t>())));
+    return 0;
+}
+
+int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t& ids_name, const nlohmann::json& data) {
+    const auto& attributes = m_machine_register[machine].attributes;
     IDSMapRegister_t temp_map_reg;
     for (const auto& [key, value] : data.items()) {
 
         switch (value["MAP_TYPE"].get<MappingType>()) {
-        case MappingType::VALUE: {
-            temp_map_reg.try_emplace(key, std::make_unique<ValueMapping>(ValueMapping(value["VALUE"])));
+        case MappingType::VALUE:
+            init_value_mapping(temp_map_reg, key, value);
             break;
-        }
-        case MappingType::PLUGIN: {
-            // Structured bindings lambda capture bug, json passed as argument
-            auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
-                std::optional<float> opt_float{std::nullopt};
-                if (value_local.contains(var_str) and !value_local[var_str].is_null()) {
-                    if (value_local[var_str].is_number_float()) {
-                        opt_float = value_local[var_str].get<float>();
-                    } else if (value_local[var_str].is_string()) {
-                        try {
-                            const auto post_inja_str =
-                                inja::render(value_local[var_str].get<std::string>(), m_ids_attributes[ids_name]);
-                            opt_float = std::stof(post_inja_str);
-                        } catch (const std::invalid_argument& e) {
-                            UDA_LOG(UDA_LOG_DEBUG, "\nCannot convert OFFSET/SCALE string to float\n");
-                        }
-                    }
-                }
-                return opt_float;
-            };
-            temp_map_reg.try_emplace(
-                key, std::make_unique<PluginMapping>(PluginMapping(
-                         std::make_pair(value["PLUGIN"].get<PluginType>(), value["PLUGIN"].get<std::string>()),
-                         value["ARGS"].get<MapArgs_t>(), get_offset_scale("OFFSET", value),
-                         get_offset_scale("SCALE", value))));
+        case MappingType::PLUGIN:
+            init_plugin_mapping(temp_map_reg, key, value, attributes.at(ids_name));
             break;
-        }
-        case MappingType::DIM: {
-            temp_map_reg.try_emplace(key,
-                                     std::make_unique<DimMapping>(DimMapping(value["DIM_PROBE"].get<std::string>())));
+        case MappingType::DIM:
+            init_dim_mapping(temp_map_reg, key, value);
             break;
-        }
-        case MappingType::SLICE: {
-            temp_map_reg.try_emplace(
-                key, std::make_unique<SliceMapping>(SliceMapping(value["SLICE_INDEX"].get<std::vector<std::string>>(),
-                                                                 value["SIGNAL"].get<std::string>())));
+        case MappingType::SLICE:
+            init_slice_mapping(temp_map_reg, key, value);
             break;
-        }
-        case MappingType::EXPR: {
-            temp_map_reg.try_emplace(
-                key, std::make_unique<ExprMapping>(
-                         ExprMapping(value["EXPR"].get<std::string>(),
-                                     value["PARAMETERS"].get<std::unordered_map<std::string, std::string>>())));
+        case MappingType::EXPR:
+            init_expr_mapping(temp_map_reg, key, value);
             break;
-        }
-        case MappingType::CUSTOM: {
-            temp_map_reg.try_emplace(
-                key, std::make_unique<CustomMapping>(CustomMapping(value["CUSTOM_TYPE"].get<CustomMapType_t>())));
+        case MappingType::CUSTOM:
+            init_custom_mapping(temp_map_reg, key, value);
             break;
-        }
         default:
             break;
             // RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "
@@ -157,7 +215,7 @@ int MappingHandler::init_mappings(const std::string& ids_name, const nlohmann::j
         }
     }
 
-    m_ids_map_register.try_emplace(ids_name, std::move(temp_map_reg));
+    m_machine_register[machine].mappings.try_emplace(ids_name, std::move(temp_map_reg));
     UDA_LOG(UDA_LOG_DEBUG, "calling read function \n");
 
     return 0;

@@ -2,8 +2,8 @@
 #include "handlers/mapping_handler.hpp"
 #include "map_types/base_mapping.hpp"
 
-#include <fstream>
 #include <boost/algorithm/string.hpp>
+#include <fstream>
 
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
@@ -92,8 +92,7 @@ class JSONMappingPlugin {
 };
 
 std::pair<std::vector<int>, std::deque<std::string>>
-JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
-{
+JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
     std::vector<int> indices;
     std::deque<std::string> processed_tokens;
 
@@ -217,8 +216,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     std::deque<std::string> split_elem_vec;
     boost::split(split_elem_vec, path, boost::is_any_of("/"));
     if (split_elem_vec.empty()) {
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
-                           "JSONMappingPlugin::get: - IDS path could not be split");
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR, "JSONMappingPlugin::get: - IDS path could not be split");
         RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - IDS path could not be split");
     }
 
@@ -231,13 +229,15 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // Load mappings based off current_ids name
     // Returns a reference to IDS map objects and corresponding globals
     // Mapping object lifetime owned by mapping_handler
-    const auto& [ids_attrs_map, map_entries] = m_mapping_handler.read_mappings(machine, current_ids);
+    const auto maybe_mappings = m_mapping_handler.read_mappings(machine, current_ids);
 
-    if (map_entries.empty()) {
+    if (!maybe_mappings) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
                            "JSONMappingPlugin::get: - JSON mapping not loaded, no map entries");
         RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - JSON mapping not loaded, no map entries");
     }
+
+    const auto& [ids_attrs_map, map_entries] = maybe_mappings.value();
 
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current

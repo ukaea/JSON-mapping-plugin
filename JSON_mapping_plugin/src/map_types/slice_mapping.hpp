@@ -6,8 +6,7 @@ class SliceMapping : public Mapping {
   public:
     SliceMapping() = delete;
     SliceMapping(std::vector<std::string> slice_indices, std::string slice_key)
-        : m_slice_indices(std::move(slice_indices)),
-          m_slice_key(std::move(slice_key)) {}
+        : m_slice_indices(std::move(slice_indices)), m_slice_key(std::move(slice_key)) {}
 
     int map(const MapArguments& arguments) const override;
 

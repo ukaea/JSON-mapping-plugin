@@ -41,8 +41,7 @@ class ExprMapping : public Mapping {
     std::string m_expr;
     std::unordered_map<std::string, std::string> m_parameters;
 
-    template <typename T>
-    int eval_expr(const MapArguments& arguments) const;
+    template <typename T> int eval_expr(const MapArguments& arguments) const;
 };
 
 /**
@@ -62,8 +61,7 @@ class ExprMapping : public Mapping {
  * @param global_data global JSON object used in templating
  * @return int error_code
  */
-template <typename T>
-int ExprMapping::eval_expr(const MapArguments& arguments) const {
+template <typename T> int ExprMapping::eval_expr(const MapArguments& arguments) const {
 
     exprtk::symbol_table<T> symbol_table;
     exprtk::expression<T> expression;
@@ -73,8 +71,7 @@ int ExprMapping::eval_expr(const MapArguments& arguments) const {
     std::unordered_map<std::string, std::string> orig_nv_list_map;
     const auto* orig_nv_list = &arguments.m_interface->request_data->nameValueList;
     for (int i = 0; i < orig_nv_list->pairCount; i++) {
-        orig_nv_list_map.insert(
-            {orig_nv_list->nameValue[i].name, orig_nv_list->nameValue[i].value});
+        orig_nv_list_map.insert({orig_nv_list->nameValue[i].name, orig_nv_list->nameValue[i].value});
     }
 
     std::vector<char*> parameters_ptrs(m_parameters.size());
@@ -94,17 +91,15 @@ int ExprMapping::eval_expr(const MapArguments& arguments) const {
         }
 
         if (arguments.m_interface->data_block->data_n > 0) {
-            symbol_table.add_vector(
-                key, reinterpret_cast<T*>(arguments.m_interface->data_block->data),
-                arguments.m_interface->data_block->data_n);
+            symbol_table.add_vector(key, reinterpret_cast<T*>(arguments.m_interface->data_block->data),
+                                    arguments.m_interface->data_block->data_n);
             if (first_vec_param) {
                 result_size = arguments.m_interface->data_block->data_n;
                 first_vec_param = false;
             }
             vector_expr = true;
         } else {
-            symbol_table.add_variable(
-                key, *reinterpret_cast<T*>(arguments.m_interface->data_block->data));
+            symbol_table.add_variable(key, *reinterpret_cast<T*>(arguments.m_interface->data_block->data));
         }
         // Collect vectors for deletion later
         parameters_ptrs.push_back(arguments.m_interface->data_block->data);

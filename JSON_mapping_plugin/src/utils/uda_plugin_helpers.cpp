@@ -16,8 +16,7 @@ int setReturnTimeArray(DATA_BLOCK* data_block) {
 
     data_block->data = data_block->dims[time_dim].dim;
     data_block->data_n = data_block->dims[time_dim].dim_n;
-    data_block->data_type =
-        data_block->dims[time_dim].data_type; // set to dims type
+    data_block->data_type = data_block->dims[time_dim].data_type; // set to dims type
     strcpy(data_block->data_units, data_block->dims[time_dim].dim_units);
     strcpy(data_block->data_label, data_block->dims[time_dim].dim_label);
 

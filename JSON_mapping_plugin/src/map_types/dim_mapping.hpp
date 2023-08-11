@@ -5,8 +5,7 @@
 class DimMapping : public Mapping {
   public:
     DimMapping() = delete;
-    explicit DimMapping(std::string dim_probe)
-        : m_dim_probe{std::move(dim_probe)} {};
+    explicit DimMapping(std::string dim_probe) : m_dim_probe{std::move(dim_probe)} {};
 
     int map(const MapArguments& arguments) const override;
 

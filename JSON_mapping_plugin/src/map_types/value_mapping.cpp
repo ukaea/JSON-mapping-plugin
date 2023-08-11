@@ -109,7 +109,8 @@ int ValueMapping::type_deduce_prim(DATA_BLOCK* data_block, const nlohmann::json&
     case nlohmann::json::value_t::string: {
         // Handle string
         // Double inja template execution
-        std::string const post_inja_str{inja::render(inja::render(temp_val.get<std::string>(), global_data), global_data)};
+        std::string const post_inja_str{
+            inja::render(inja::render(temp_val.get<std::string>(), global_data), global_data)};
         // try to convert to integer
         // catch exception - output as string
         // inja templating may replace with number

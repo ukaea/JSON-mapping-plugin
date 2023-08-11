@@ -36,8 +36,7 @@ int transform_offset(DataBlock* data_block, float offset) {
             break;
         }
         default:
-            UDA_LOG(UDA_LOG_DEBUG,
-                    "\nOffsetEntry::transform(...) Unrecognised type\n");
+            UDA_LOG(UDA_LOG_DEBUG, "\nOffsetEntry::transform(...) Unrecognised type\n");
             return 1;
         }
     } else {
@@ -68,8 +67,7 @@ int transform_offset(DataBlock* data_block, float offset) {
             break;
         }
         default:
-            UDA_LOG(UDA_LOG_DEBUG,
-                    "\nOffsetEntry::transform(...) Unrecognised type\n");
+            UDA_LOG(UDA_LOG_DEBUG, "\nOffsetEntry::transform(...) Unrecognised type\n");
             break;
         }
     }
@@ -109,8 +107,7 @@ int transform_scale(DataBlock* data_block, float scale) {
             break;
         }
         default:
-            UDA_LOG(UDA_LOG_DEBUG,
-                    "\nOffsetEntry::transform(...) Unrecognised type\n");
+            UDA_LOG(UDA_LOG_DEBUG, "\nOffsetEntry::transform(...) Unrecognised type\n");
             return 1;
         }
     } else {
@@ -141,8 +138,7 @@ int transform_scale(DataBlock* data_block, float scale) {
             break;
         }
         default:
-            UDA_LOG(UDA_LOG_DEBUG,
-                    "\nOffsetEntry::transform(...) Unrecognised type\n");
+            UDA_LOG(UDA_LOG_DEBUG, "\nOffsetEntry::transform(...) Unrecognised type\n");
             break;
         }
     }

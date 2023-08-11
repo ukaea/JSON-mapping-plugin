@@ -8,46 +8,64 @@
 #include "map_types/base_mapping.hpp"
 #include <nlohmann/json.hpp>
 
-using IDSMapRegister_t = std::unordered_map<std::string, std::unique_ptr<Mapping>>;
-using IDSMapRegisterStore_t = std::unordered_map<std::string, IDSMapRegister_t>;
-using IDSAttrRegisterStore_t = std::unordered_map<std::string, nlohmann::json>;
+using IDSName_t = std::string;
+using MachineName_t = std::string;
+using MappingName_t = std::string;
+
+using IDSMapRegister_t = std::unordered_map<MappingName_t, std::unique_ptr<Mapping>>;
+using IDSMapRegisterStore_t = std::unordered_map<IDSName_t, IDSMapRegister_t>;
+using IDSAttrRegisterStore_t = std::unordered_map<IDSName_t, nlohmann::json>;
+
+struct MachineMapping {
+    IDSMapRegisterStore_t mappings;
+    IDSAttrRegisterStore_t attributes;
+};
+
+using MachineRegisterStore_t = std::unordered_map<MachineName_t, MachineMapping>;
 using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 
 class MappingHandler {
 
   public:
-    MappingHandler() : m_init(false), m_imas_version("3.37"){};
-    explicit MappingHandler(std::string imas_version) : m_init(false), m_imas_version(std::move(imas_version)){};
+    MappingHandler() : m_init(false), m_dd_version("3.37"){};
+    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
+
     int reset() {
-        m_ids_attributes.clear();
-        m_ids_map_register.clear();
+        m_machine_register.clear();
         m_mapping_config.clear();
         m_init = false;
         return 0;
     };
     int init() {
-        if (m_init || !m_ids_map_register.empty()) {
+        if (m_init || !m_machine_register.empty()) {
             return 0;
         }
-        load_all();
 
         m_init = true;
         return 0;
     };
     int set_map_dir(const std::string& mapping_dir);
-    MappingPair read_mappings(const std::string& machine, const std::string& request_ids);
+    std::optional<MappingPair> read_mappings(const MachineName_t& machine, const std::string& request_ids);
 
   private:
-    int init_mappings(const std::string& ids_name, const nlohmann::json& data);
-    int load_all();
-    int load_globals(const std::string& ids_str);
-    int load_mappings(const std::string& ids_str);
+    std::string mapping_path(const MachineName_t& machine, const IDSName_t& ids_name, const std::string& file_name);
+    int init_mappings(const MachineName_t& machine, const IDSName_t& ids_name, const nlohmann::json& data);
+    int load_machine(const MachineName_t& machine);
+    int load_globals(const MachineName_t& machine, const IDSName_t& ids_name);
+    int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 
-    IDSMapRegisterStore_t m_ids_map_register;
-    IDSAttrRegisterStore_t m_ids_attributes;
+    static int init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
+    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
+                                   nlohmann::json ids_attributes);
+    static int init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
+    static int init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
+    static int init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
+    static int init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
+
+    MachineRegisterStore_t m_machine_register;
     bool m_init;
 
-    std::string m_imas_version;
+    std::string m_dd_version;
     std::string m_mapping_dir;
     nlohmann::json m_mapping_config;
 };

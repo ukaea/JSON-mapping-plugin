@@ -13,17 +13,14 @@
 
 namespace imas_json_plugin::uda_helpers {
 
-inline std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{
-    {typeid(unsigned int).name(), UDA_TYPE_UNSIGNED_INT},
-    {typeid(int).name(), UDA_TYPE_INT},
-    {typeid(float).name(), UDA_TYPE_FLOAT},
-    {typeid(double).name(), UDA_TYPE_DOUBLE}};
+inline std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{{typeid(unsigned int).name(), UDA_TYPE_UNSIGNED_INT},
+                                                              {typeid(int).name(), UDA_TYPE_INT},
+                                                              {typeid(float).name(), UDA_TYPE_FLOAT},
+                                                              {typeid(double).name(), UDA_TYPE_DOUBLE}};
 
 int setReturnTimeArray(DATA_BLOCK* data_block);
 
-template <typename T>
-int setReturnDataScalarType(DATA_BLOCK* data_block, T value,
-                            const char* description = nullptr) {
+template <typename T> int setReturnDataScalarType(DATA_BLOCK* data_block, T value, const char* description = nullptr) {
 
     initDataBlock(data_block);
 
@@ -44,8 +41,7 @@ int setReturnDataScalarType(DATA_BLOCK* data_block, T value,
 };
 
 template <typename T>
-int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values,
-                           gsl::span<const size_t> shape,
+int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gsl::span<const size_t> shape,
                            const char* description = nullptr) {
 
     initDataBlock(data_block);
@@ -89,8 +85,7 @@ int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values,
 };
 
 template <typename T>
-int setReturnDataArrayType_Vec(DATA_BLOCK* data_block,
-                               const std::vector<T>& vec_values,
+int setReturnDataArrayType_Vec(DATA_BLOCK* data_block, const std::vector<T>& vec_values,
                                const char* description = nullptr) {
 
     initDataBlock(data_block);
@@ -127,8 +122,7 @@ int setReturnDataArrayType_Vec(DATA_BLOCK* data_block,
 };
 
 template <typename T>
-int setReturnDataValArray(DATA_BLOCK* data_block,
-                          const std::valarray<T>& va_values,
+int setReturnDataValArray(DATA_BLOCK* data_block, const std::valarray<T>& va_values,
                           const char* description = nullptr) {
 
     initDataBlock(data_block);
