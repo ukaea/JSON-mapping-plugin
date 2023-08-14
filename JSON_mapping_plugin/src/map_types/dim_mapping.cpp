@@ -19,4 +19,4 @@ int DimMapping::map(const MapArguments& arguments) const {
         setReturnDataIntScalar(arguments.m_interface->data_block, arguments.m_interface->data_block->data_n, nullptr);
     }
     return err;
-};
+}

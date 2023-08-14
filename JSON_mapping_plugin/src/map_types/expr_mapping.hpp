@@ -35,7 +35,7 @@ class ExprMapping : public Mapping {
     ExprMapping(std::string expr, std::unordered_map<std::string, std::string> parameters)
         : m_expr{std::move(expr)}, m_parameters{std::move(parameters)} {};
 
-    int map(const MapArguments& arguments) const override;
+    [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:
     std::string m_expr;
@@ -131,4 +131,4 @@ template <typename T> int ExprMapping::eval_expr(const MapArguments& arguments) 
     }
 
     return 0;
-};
+}

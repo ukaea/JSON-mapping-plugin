@@ -29,6 +29,6 @@ int setReturnTimeArray(DATA_BLOCK* data_block) {
     data_block->dims[time_dim].diff = 1.0;
 
     return 0;
-};
+}
 
-}; // namespace imas_json_plugin::uda_helpers
+} // namespace imas_json_plugin::uda_helpers

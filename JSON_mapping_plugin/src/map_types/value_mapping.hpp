@@ -12,7 +12,7 @@ class ValueMapping : public Mapping {
     ValueMapping& operator=(const ValueMapping&) = default;
 
     explicit ValueMapping(nlohmann::json value) : m_value{std::move(value)} {};
-    int map(const MapArguments& arguments) const override;
+    [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:
     nlohmann::json m_value;

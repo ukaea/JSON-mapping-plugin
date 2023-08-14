@@ -36,7 +36,7 @@ std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDS
     if (ids_name.empty()) {
         return m_mapping_dir + "/" + machine + "/" + file_name;
     } else {
-        return m_mapping_dir + "/mappings/" + machine + "/" + ids_name + "/" + file_name;
+        return m_mapping_dir + "/" + machine + "/mappings/" + ids_name + "/" + file_name;
     }
 }
 
@@ -52,7 +52,7 @@ int MappingHandler::load_machine(const MachineName_t& machine) {
     if (map_cfg_file) {
         map_cfg_file >> m_mapping_config;
     } else {
-        RAISE_PLUGIN_ERROR("MappingHandler::load_configs - Cannot open JSON mapping config file");
+        RAISE_PLUGIN_ERROR("MappingHandler::load_configs - Cannot open JSON mapping config file")
     }
 
     m_machine_register[machine] = {{}, {}};
@@ -78,13 +78,13 @@ int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& 
         } catch (nlohmann::json::exception& ex) {
             std::string json_error{"MappingHandler::load_globals - "};
             json_error.append(ex.what());
-            RAISE_PLUGIN_ERROR(json_error.c_str());
+            RAISE_PLUGIN_ERROR(json_error.c_str())
         }
 
         m_machine_register[machine].attributes[ids_name] = temp_globals; // Record globals
 
     } else {
-        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open JSON globals file");
+        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open JSON globals file")
     }
     return 0;
 }
@@ -102,12 +102,12 @@ int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t&
         } catch (nlohmann::json::exception& ex) {
             std::string json_error{"MappingHandler::load_mappings - "};
             json_error.append(ex.what());
-            RAISE_PLUGIN_ERROR(json_error.c_str());
+            RAISE_PLUGIN_ERROR(json_error.c_str())
         }
 
         init_mappings(machine, ids_name, temp_mappings);
     } else {
-        RAISE_PLUGIN_ERROR("MappingHandler::load_mappings - Cannot open JSON mapping file");
+        RAISE_PLUGIN_ERROR("MappingHandler::load_mappings - Cannot open JSON mapping file")
     }
     return 0;
 }

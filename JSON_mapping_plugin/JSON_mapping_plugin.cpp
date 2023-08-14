@@ -26,11 +26,11 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
 
     const ENVIRONMENT* environment = getServerEnvironment();
 
-    std::string log_file_name = std::string{environment->logdir} + "/JSON_plugin.log";
+    std::string const log_file_name = std::string{static_cast<const char*>(environment->logdir)} + "/JSON_plugin.log";
     std::ofstream jp_log_file;
     jp_log_file.open(log_file_name, std::ios_base::out | std::ios_base::app);
-    std::time_t time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
-    const auto timestamp = std::put_time(std::gmtime(&time_now), "%Y-%m-%d:%H:%M:%S");
+    std::time_t const time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+    const auto timestamp = std::put_time(std::gmtime(&time_now), "%Y-%m-%d:%H:%M:%S"); // NOLINT(concurrency-mt-unsafe)
     if (!jp_log_file) {
         return 1;
     }
@@ -51,7 +51,7 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
     default:
         jp_log_file << "LOG_LEVEL NOT DEFINED";
     }
-    jp_log_file << log_msg << std::endl;
+    jp_log_file << log_msg << "\n";
     jp_log_file.close();
 
     return 0;
@@ -74,21 +74,26 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
 class JSONMappingPlugin {
 
   public:
+    int execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function);
+
     int init(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int reset(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int help(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int version(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int build_date(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int default_method(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    static int help(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    static int version(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    static int build_date(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    static int default_method(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    static int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
   private:
     bool m_init = false;
     // Loads, controls, stores mapping file lifetime
     MappingHandler m_mapping_handler;
-    SignalType deduce_signal_type(std::string_view element_back_str);
-    std::pair<std::vector<int>, std::deque<std::string>> extract_indices(const std::deque<std::string>& path_tokens);
+    static SignalType deduce_signal_type(std::string_view element_back_str);
+    static std::pair<std::vector<int>, std::deque<std::string>>
+    extract_indices(const std::deque<std::string>& path_tokens);
+    static int add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface, nlohmann::json& attributes);
+    static std::string generate_map_path(std::deque<std::string>& path_tokens, IDSMapRegister_t& mappings);
 };
 
 std::pair<std::vector<int>, std::deque<std::string>>
@@ -97,10 +102,10 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
     std::deque<std::string> processed_tokens;
 
     for (const auto& token : path_tokens) {
-        size_t pos = token.find("[");
+        size_t const pos = token.find('[');
         if (pos != std::string::npos) {
             auto sub_string = token.substr(pos + 1);
-            int index = std::stoi(sub_string);
+            int const index = std::stoi(sub_string);
             auto new_token = token.substr(0, pos) + "[#]";
             indices.push_back(index);
             processed_tokens.push_back(new_token);
@@ -124,19 +129,21 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
  */
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
-    REQUEST_DATA* request_data = plugin_interface->request_data;
-    if (!m_init || STR_IEQUALS(request_data->function, "init") || STR_IEQUALS(request_data->function, "initialise")) {
+    std::string const function = static_cast<const char*>(plugin_interface->request_data->function);
+
+    if (!m_init || function == "init" || function == "initialise") {
         reset(plugin_interface);
     }
 
-    std::string map_dir = getenv("JSON_MAPPING_DIR");
+    std::string const map_dir = getenv("JSON_MAPPING_DIR"); // NOLINT(concurrency-mt-unsafe)
     if (!map_dir.empty()) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR, "JSONMappingPlugin::init: - JSON mapping locations not set");
-        RAISE_PLUGIN_ERROR("JSONMappingPlugin::init: - JSON mapping locations not set");
+        RAISE_PLUGIN_ERROR("JSONMappingPlugin::init: - JSON mapping locations not set")
     }
     m_mapping_handler.init();
+    m_init = true;
 
     return 0;
 }
@@ -148,7 +155,7 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @return errorcode UDA convention to return int errorcode
  * 0 success, !0 failure
  */
-int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) {
     if (m_init) {
         // Free Heap & reset counters if initialised
         m_init = false;
@@ -172,14 +179,53 @@ SignalType JSONMappingPlugin::deduce_signal_type(std::string_view element_back_s
     if (element_back_str.empty()) {
         UDA_LOG(UDA_LOG_DEBUG, "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
         sig_type = SignalType::INVALID;
-    } else if (!element_back_str.compare("data")) { // implicit conversion
+    } else if (element_back_str == "data") {
         sig_type = SignalType::DATA;
-    } else if (!element_back_str.compare("time")) { // implicit conversion
+    } else if (element_back_str == "time") {
         sig_type = SignalType::TIME;
     } else if (element_back_str.find("error") != std::string::npos) {
         sig_type = SignalType::ERROR;
     }
     return sig_type;
+}
+
+int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface,
+                                                       nlohmann::json& attributes) {
+    // TODO: need to make this generic for any machine
+    int run{-1};
+    int shot{0};
+    FIND_INT_VALUE(plugin_interface->request_data->nameValueList, run);
+    FIND_REQUIRED_INT_VALUE(plugin_interface->request_data->nameValueList, shot)
+
+    attributes["shot"] = shot;
+    attributes["run"] = run;
+
+    return 0;
+}
+
+std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, IDSMapRegister_t& mappings) {
+    std::string map_path = boost::algorithm::join(path_tokens, "/");
+    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
+
+    // Deduce signal_type
+    const auto sig_type = deduce_signal_type(path_tokens.back());
+    if (sig_type == SignalType::INVALID) {
+        return {}; // Don't throw, go gentle into that good night
+    }
+
+    if (mappings.count(map_path) == 0) {
+        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING, "JSONMappingPlugin::get: - "
+                                                             "IDS path not found in JSON mapping file");
+        if (sig_type == SignalType::TIME or sig_type == SignalType::DATA) {
+            path_tokens.pop_back();
+            map_path = boost::algorithm::join(path_tokens, "/");
+            if (mappings.count(map_path) == 0) {
+                return {};
+            }
+        }
+    }
+
+    return map_path;
 }
 
 /**
@@ -210,75 +256,74 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     const char* machine = nullptr;
     const char* path = nullptr;
 
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, machine);
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, path);
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, machine)
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, path)
 
-    std::deque<std::string> split_elem_vec;
-    boost::split(split_elem_vec, path, boost::is_any_of("/"));
-    if (split_elem_vec.empty()) {
+    std::deque<std::string> path_tokens;
+    boost::split(path_tokens, path, boost::is_any_of("/"));
+    if (path_tokens.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR, "JSONMappingPlugin::get: - IDS path could not be split");
-        RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - IDS path could not be split");
+        RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - IDS path could not be split")
     }
 
     std::vector<int> indices;
-    std::tie(indices, split_elem_vec) = extract_indices(split_elem_vec);
+    std::tie(indices, path_tokens) = extract_indices(path_tokens);
 
     // Use first hash of the IDS path as the IDS name
-    std::string current_ids{split_elem_vec.front()};
+    std::string const ids_name{path_tokens.front()};
 
-    // Load mappings based off current_ids name
+    // Load mappings based off IDS name
     // Returns a reference to IDS map objects and corresponding globals
     // Mapping object lifetime owned by mapping_handler
-    const auto maybe_mappings = m_mapping_handler.read_mappings(machine, current_ids);
+    const auto maybe_mappings = m_mapping_handler.read_mappings(machine, ids_name);
 
     if (!maybe_mappings) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
                            "JSONMappingPlugin::get: - JSON mapping not loaded, no map entries");
-        RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - JSON mapping not loaded, no map entries");
+        RAISE_PLUGIN_ERROR("JSONMappingPlugin::get: - JSON mapping not loaded, no map entries")
     }
 
-    const auto& [ids_attrs_map, map_entries] = maybe_mappings.value();
+    const auto& [attributes, mappings] = maybe_mappings.value();
 
     // Remove IDS name from path and rejoin for hash map key
     // magnetics/coil/#/current -> coil/#/current
-    split_elem_vec.pop_front();
-    std::string map_path = boost::algorithm::join(split_elem_vec, "/");
-    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
+    path_tokens.pop_front();
 
-    // Deduce signal_type
-    const auto sig_type = deduce_signal_type(split_elem_vec.back());
-    if (sig_type == SignalType::INVALID) {
-        return 1; // Don't throw, go gentle into that good night
-    }
-
-    if (!map_entries.count(map_path)) { // implicit conversion
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING, "JSONMappingPlugin::get: - "
-                                                             "IDS path not found in JSON mapping file");
-        if (sig_type == SignalType::TIME or sig_type == SignalType::DATA) {
-            split_elem_vec.pop_back();
-            map_path = boost::algorithm::join(split_elem_vec, "/");
-            if (!map_entries.count(map_path)) { // implicit conversion
-                return 1;                       // No mapping found, don't throw
-            }
-        }
+    std::string const map_path = generate_map_path(path_tokens, mappings);
+    if (map_path.empty()) {
+        return 1; // No mapping found, don't throw
     }
 
     // Add request indices to globals
-    ids_attrs_map["indices"] = indices;
+    attributes["indices"] = indices;
 
-    // TODO: need to make this generic for any machine
-    int run{-1};
-    int shot{0};
-    FIND_INT_VALUE(plugin_interface->request_data->nameValueList, run);
-    FIND_REQUIRED_INT_VALUE(plugin_interface->request_data->nameValueList, shot)
+    add_machine_specific_attributes(plugin_interface, attributes);
 
-    ids_attrs_map["shot"] = indices;
-    ids_attrs_map["run"] = indices;
+    MapArguments const map_arguments{plugin_interface, mappings, attributes};
 
-    MapArguments arguments{plugin_interface, map_entries, ids_attrs_map};
+    return mappings[map_path]->map(map_arguments);
+}
 
-    // For mapping object perform mapping
-    return map_entries[map_path]->map(arguments);
+int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function) {
+    int return_code = 0;
+    if (function == "help") {
+        return_code = JSONMappingPlugin::help(plugin_interface);
+    } else if (function == "version") {
+        return_code = JSONMappingPlugin::version(plugin_interface);
+    } else if (function == "builddate") {
+        return_code = JSONMappingPlugin::build_date(plugin_interface);
+    } else if (function == "defaultmethod") {
+        return_code = JSONMappingPlugin::default_method(plugin_interface);
+    } else if (function == "maxinterfaceversion") {
+        return_code = JSONMappingPlugin::max_interface_version(plugin_interface);
+    } else if (function == "read" || function == "get") {
+        return_code = get(plugin_interface);
+    } else if (function == "close") {
+        return_code = 0;
+    } else {
+        RAISE_PLUGIN_ERROR("Unknown function requested!")
+    }
+    return return_code;
 }
 
 /**
@@ -287,59 +332,36 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+[[maybe_unused]] int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
-    //----------------------------------------------------------------------------------------
-    // Standard v1 Plugin Interface
     if (plugin_interface->interfaceVersion > THISPLUGIN_MAX_INTERFACE_VERSION) {
-        RAISE_PLUGIN_ERROR("Plugin Interface Version Unknown to this plugin: Unable to execute the request!");
+        RAISE_PLUGIN_ERROR("Plugin Interface Version Unknown to this plugin: Unable to execute the request!")
     }
 
     plugin_interface->pluginVersion = THISPLUGIN_VERSION;
-    REQUEST_DATA* request_data = plugin_interface->request_data;
 
     try {
         static JSONMappingPlugin plugin = {};
-        auto* const plugin_func = request_data->function;
+        std::string const function = static_cast<char*>(plugin_interface->request_data->function);
 
-        if (plugin_interface->housekeeping || STR_IEQUALS(plugin_func, "reset")) {
+        if (plugin_interface->housekeeping != 0 || function == "reset") {
             plugin.reset(plugin_interface);
             return 0;
         }
+
         //--------------------------------------
         // Initialise
         plugin.init(plugin_interface);
-        if (STR_IEQUALS(plugin_func, "init") || STR_IEQUALS(plugin_func, "initialise")) {
+        if (function == "init" || function == "initialise") {
             return 0;
         }
-        //--------------------------------------
-        // Standard methods: version, builddate, defaultmethod, maxinterfaceversion
-        if (STR_IEQUALS(plugin_func, "help")) {
-            return plugin.help(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "version")) {
-            return plugin.version(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "builddate")) {
-            return plugin.build_date(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "defaultmethod")) {
-            return plugin.default_method(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "maxinterfaceversion")) {
-            return plugin.max_interface_version(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "read")) {
-            UDA_LOG(UDA_LOG_DEBUG, "calling get function (read given) \n");
-            return plugin.get(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "get")) {
-            UDA_LOG(UDA_LOG_DEBUG, "calling get function \n");
-            return plugin.get(plugin_interface);
-        } else if (STR_IEQUALS(plugin_func, "close")) {
-            UDA_LOG(UDA_LOG_DEBUG, "calling close function \n");
-            return 0;
-        } else {
-            RAISE_PLUGIN_ERROR("Unknown function requested!");
-        }
+
+        return plugin.execute(plugin_interface, function);
     } catch (const std::exception& ex) {
-        RAISE_PLUGIN_ERROR(ex.what());
+        RAISE_PLUGIN_ERROR(ex.what())
     }
 }
+
 /**
  * Help: A Description of library functionality
  * @param plugin_interface

@@ -15,7 +15,7 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MappingType, {{MappingType::VALUE, "VALUE"},
                                            {MappingType::SLICE, "SLICE"},
                                            {MappingType::EXPR, "EXPR"},
                                            {MappingType::CUSTOM, "CUSTOM"},
-                                           {MappingType::DIM, "DIMENSION"}});
+                                           {MappingType::DIM, "DIMENSION"}})
 
 class Mapping {
   public:

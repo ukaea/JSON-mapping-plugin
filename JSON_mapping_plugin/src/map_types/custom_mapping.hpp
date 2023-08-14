@@ -5,7 +5,7 @@
 enum class CustomMapType_t { MASTU_helloworld, DRAFT_helloworld, INVALID };
 NLOHMANN_JSON_SERIALIZE_ENUM(CustomMapType_t, {{CustomMapType_t::INVALID, nullptr},
                                                {CustomMapType_t::MASTU_helloworld, "MASTU_helloworld"},
-                                               {CustomMapType_t::DRAFT_helloworld, "DRAFT_helloworld"}});
+                                               {CustomMapType_t::DRAFT_helloworld, "DRAFT_helloworld"}})
 
 /**
  * @class CustomMapping
@@ -20,11 +20,11 @@ class CustomMapping : public Mapping {
     CustomMapping() = delete;
     ~CustomMapping() override = default;
     explicit CustomMapping(CustomMapType_t custom_type) : m_custom_type(custom_type){};
-    int map(const MapArguments& arguments) const override;
+    [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:
     CustomMapType_t m_custom_type;
 
-    int MASTU_helloworld(DATA_BLOCK* data_block) const;
-    int DRAFT_helloworld(DATA_BLOCK* data_block) const;
+    static int MASTU_helloworld(DATA_BLOCK* data_block);
+    static int DRAFT_helloworld(DATA_BLOCK* data_block);
 };

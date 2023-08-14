@@ -38,7 +38,7 @@ template <typename T> int setReturnDataScalarType(DATA_BLOCK* data_block, T valu
     data_block->data_n = 1;
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gsl::span<const size_t> shape,
@@ -60,7 +60,7 @@ int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gs
     for (size_t i = 0; i < rank; ++i) {
         initDimBlock(&data_block->dims[i]);
 
-        int shape_i = shape[i];
+        int shape_i = static_cast<int>(shape[i]);
         data_block->dims[i].data_type = UDA_TYPE_UNSIGNED_INT;
 
         data_block->dims[i].dim_n = shape_i;
@@ -82,7 +82,7 @@ int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gs
     data_block->data_n = (int)len; // Not ideal....
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataArrayType_Vec(DATA_BLOCK* data_block, const std::vector<T>& vec_values,
@@ -119,7 +119,7 @@ int setReturnDataArrayType_Vec(DATA_BLOCK* data_block, const std::vector<T>& vec
     data_block->data_n = (int)vec_size;
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataValArray(DATA_BLOCK* data_block, const std::valarray<T>& va_values,
@@ -158,4 +158,4 @@ int setReturnDataValArray(DATA_BLOCK* data_block, const std::valarray<T>& va_val
     return 0;
 }
 
-}; // namespace imas_json_plugin::uda_helpers
+} // namespace imas_json_plugin::uda_helpers

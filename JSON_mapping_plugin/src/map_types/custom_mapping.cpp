@@ -29,10 +29,10 @@ int CustomMapping::map(const MapArguments& arguments) const {
     return err;
 }
 
-int CustomMapping::MASTU_helloworld(DATA_BLOCK* data_block) const {
+int CustomMapping::MASTU_helloworld(DATA_BLOCK* data_block) {
     return setReturnDataString(data_block, "Hello World from MASTU", nullptr);
 }
 
-int CustomMapping::DRAFT_helloworld(DATA_BLOCK* data_block) const {
+int CustomMapping::DRAFT_helloworld(DATA_BLOCK* data_block) {
     return setReturnDataString(data_block, "Hello World from DRAFT", nullptr);
 }

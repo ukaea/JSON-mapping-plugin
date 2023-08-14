@@ -1,14 +1,15 @@
 ---
-Checks:
-  - *
-  - -fuchsia-*
-  - -google-*
-  - -zircon-*
-  - -abseil-*
-  - -modernize-use-trailing-return-type
-  - -llvm-*
-  - -llvmlibc-*'
-  - -bugprone-easily-swappable-parameters
+Checks: >
+  *,
+  -fuchsia-*,
+  -google-*,
+  -zircon-*,
+  -abseil-*,
+  -modernize-use-trailing-return-type,
+  -llvm-*,
+  -llvmlibc-*,
+  -bugprone-easily-swappable-parameters,
+  -altera-unroll-loops
 CheckOptions:
   misc-non-private-member-variables-in-classes: IgnoreClassesWithAllMemberVariablesBeingPublic
 WarningsAsErrors: '*'
