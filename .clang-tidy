@@ -9,7 +9,8 @@ Checks: >
   -llvm-*,
   -llvmlibc-*,
   -bugprone-easily-swappable-parameters,
-  -altera-unroll-loops
+  -altera-unroll-loops,
+  -cppcoreguidelines-pro-type-reinterpret-cast
 CheckOptions:
   misc-non-private-member-variables-in-classes: IgnoreClassesWithAllMemberVariablesBeingPublic
 WarningsAsErrors: '*'

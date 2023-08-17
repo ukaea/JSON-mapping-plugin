@@ -35,9 +35,8 @@ std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDS
                                          const std::string& file_name) {
     if (ids_name.empty()) {
         return m_mapping_dir + "/" + machine + "/" + file_name;
-    } else {
-        return m_mapping_dir + "/" + machine + "/mappings/" + ids_name + "/" + file_name;
     }
+    return m_mapping_dir + "/" + machine + "/mappings/" + ids_name + "/" + file_name;
 }
 
 int MappingHandler::load_machine(const MachineName_t& machine) {
@@ -113,8 +112,22 @@ int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t&
 }
 
 int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key, std::make_unique<ValueMapping>(ValueMapping(value["VALUE"])));
+    map_reg.try_emplace(key, std::make_unique<ValueMapping>(value["VALUE"]));
     return 0;
+}
+
+void add_plugin_args(std::unordered_map<std::string, nlohmann::json>& args, nlohmann::json ids_attributes,
+                     const std::string& plugin_name) {
+    const auto& plugin_args_map = ids_attributes["PLUGIN_ARGS"].get<nlohmann::json>();
+    if (plugin_args_map.count(plugin_name) != 0) {
+        const auto& plugin_args = plugin_args_map[plugin_name].get<nlohmann::json>();
+        for (const auto& [name, arg] : plugin_args.items()) {
+            if (args.count(name) == 0) {
+                // don't overwrite mapping arguments with global values
+                args[name] = arg;
+            }
+        }
+    }
 }
 
 int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
@@ -140,47 +153,36 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     auto plugin_name = value["PLUGIN"].get<std::string>();
     auto args = value["ARGS"].get<MapArgs_t>();
 
-    if (ids_attributes.count("PLUGIN_ARGS")) {
-        const auto& plugin_args_map = ids_attributes["PLUGIN_ARGS"].get<nlohmann::json>();
-        if (plugin_args_map.count(plugin_name)) {
-            const auto& plugin_args = plugin_args_map[plugin_name].get<nlohmann::json>();
-            for (const auto& [name, arg] : plugin_args.items()) {
-                if (args.count(name) == 0) {
-                    // don't overwrite mapping arguments with global values
-                    args[name] = arg;
-                }
-            }
-        }
+    if (ids_attributes.count("PLUGIN_ARGS") != 0) {
+        add_plugin_args(args, ids_attributes, plugin_name);
     }
 
-    map_reg.try_emplace(
-        key, std::make_unique<PluginMapping>(PluginMapping(plugin_name, args, get_offset_scale("OFFSET", value),
-                                                           get_offset_scale("SCALE", value))));
+    auto offset = get_offset_scale("OFFSET", value);
+    auto scale = get_offset_scale("SCALE", value);
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale));
     return 0;
 }
 
 int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key, std::make_unique<DimMapping>(DimMapping(value["DIM_PROBE"].get<std::string>())));
+    map_reg.try_emplace(key, std::make_unique<DimMapping>(value["DIM_PROBE"].get<std::string>()));
     return 0;
 }
 
 int MappingHandler::init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(
-        key, std::make_unique<SliceMapping>(SliceMapping(value["SLICE_INDEX"].get<std::vector<std::string>>(),
-                                                         value["SIGNAL"].get<std::string>())));
+    map_reg.try_emplace(key, std::make_unique<SliceMapping>(value["SLICE_INDEX"].get<std::vector<std::string>>(),
+                                                            value["SIGNAL"].get<std::string>()));
     return 0;
 }
 
 int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key, std::make_unique<ExprMapping>(
-                                 ExprMapping(value["EXPR"].get<std::string>(),
-                                             value["PARAMETERS"].get<std::unordered_map<std::string, std::string>>())));
+    map_reg.try_emplace(
+        key, std::make_unique<ExprMapping>(value["EXPR"].get<std::string>(),
+                                           value["PARAMETERS"].get<std::unordered_map<std::string, std::string>>()));
     return 0;
 }
 
 int MappingHandler::init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key,
-                        std::make_unique<CustomMapping>(CustomMapping(value["CUSTOM_TYPE"].get<CustomMapType_t>())));
+    map_reg.try_emplace(key, std::make_unique<CustomMapping>(value["CUSTOM_TYPE"].get<CustomMapType_t>()));
     return 0;
 }
 
