@@ -10,7 +10,10 @@ Checks: >
   -llvmlibc-*,
   -bugprone-easily-swappable-parameters,
   -altera-unroll-loops,
-  -cppcoreguidelines-pro-type-reinterpret-cast
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -altera-struct-pack-align,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -hicpp-no-array-decay
 CheckOptions:
   misc-non-private-member-variables-in-classes: IgnoreClassesWithAllMemberVariablesBeingPublic
 WarningsAsErrors: '*'

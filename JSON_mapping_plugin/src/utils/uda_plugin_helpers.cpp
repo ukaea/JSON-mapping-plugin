@@ -7,26 +7,28 @@ int setReturnTimeArray(DATA_BLOCK* data_block) {
     // Retrieve index of the time block
     const auto time_dim = data_block->order;
 
-    if (data_block->dims[0].compressed) {
-        uncompressDim(&data_block->dims[0]);
+    auto dims = gsl::span(data_block->dims, data_block->rank);
+
+    if (dims[0].compressed != 0) {
+        uncompressDim(dims.data());
     }
     data_block->rank = 1;
     data_block->order = -1;
     free((void*)data_block->data);
 
-    data_block->data = data_block->dims[time_dim].dim;
-    data_block->data_n = data_block->dims[time_dim].dim_n;
-    data_block->data_type = data_block->dims[time_dim].data_type; // set to dims type
-    strcpy(data_block->data_units, data_block->dims[time_dim].dim_units);
-    strcpy(data_block->data_label, data_block->dims[time_dim].dim_label);
+    data_block->data = dims[time_dim].dim;
+    data_block->data_n = dims[time_dim].dim_n;
+    data_block->data_type = dims[time_dim].data_type; // set to dims type
+    strncpy(data_block->data_units, dims[time_dim].dim_units, STRING_LENGTH);
+    strncpy(data_block->data_label, dims[time_dim].dim_label, STRING_LENGTH);
 
     // Cleanup to make things behave
-    data_block->dims[time_dim].dim = nullptr;
-    data_block->dims[time_dim].data_type = UDA_TYPE_UNSIGNED_INT;
-    data_block->dims[time_dim].compressed = 1;
-    data_block->dims[time_dim].method = 0;
-    data_block->dims[time_dim].dim0 = 0.0;
-    data_block->dims[time_dim].diff = 1.0;
+    dims[time_dim].dim = nullptr;
+    dims[time_dim].data_type = UDA_TYPE_UNSIGNED_INT;
+    dims[time_dim].compressed = 1;
+    dims[time_dim].method = 0;
+    dims[time_dim].dim0 = 0.0;
+    dims[time_dim].diff = 1.0;
 
     return 0;
 }
