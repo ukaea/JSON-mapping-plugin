@@ -135,7 +135,7 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         reset(plugin_interface);
     }
 
-    std::string const map_dir = getenv("JSON_MAPPING_DIR"); // NOLINT(concurrency-mt-unsafe)
+    std::string const map_dir = getenv("UDA_JSON_MAPPING_DIR"); // NOLINT(concurrency-mt-unsafe)
     if (!map_dir.empty()) {
         m_mapping_handler.set_map_dir(map_dir);
     } else {

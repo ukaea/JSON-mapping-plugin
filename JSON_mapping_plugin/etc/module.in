@@ -23,6 +23,5 @@ module-whatis "$desc (v$ver)"
 setenv UDA_PLUGIN_CONFIG                    $plugins_home/etc/plugins/udaPlugins.conf
 setenv UDA_PLUGIN_DEBUG_SINGLEFILE          1
 setenv UDA_PLUGIN_DIR                       $plugins_home/lib/plugins
-setenv UDA_IMAS_MACHINE_MAP                 $plugins_home/etc/imas_mapping/machines.txt
 setenv UDA_EXP2IMAS_MAPPING_FILE_DIRECTORY  $plugins_home/etc/exp2imas/mappings
 setenv UDA_IMAS_PLUGIN_MAP $IMAS_HOME/core/installer/src/$IMAS_VERSION/ual/$UAL_VERSION/lowlevel/uda_mappings.txt

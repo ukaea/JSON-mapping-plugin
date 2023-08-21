@@ -1,7 +1,4 @@
-# Needed to runtime find the installed machines.txt and mappings locations
-# on the server side machine
+# Needed to runtime find the installed mappings locations on the server side machine
 # Environmental Variables are available on server after install
-export UDA_DIRECTORY=@CMAKE_INSTALL_PREFIX@/etc/
-export UDA_IMAS_MACHINE_MAP=@CMAKE_INSTALL_PREFIX@/etc/plugins.d/imas_mapping/machines.txt
-# export JSON_MAPPING_DIR=/Users/aparker/Desktop/mapping_template/MAST-U_IMAS_mappings
-export JSON_MAPPING_DIR=/Users/aparker/Desktop/mapping_template/JSON_mappings
+
+export UDA_JSON_MAPPING_DIR=@CMAKE_INSTALL_PREFIX@/etc/JSON_mappings
