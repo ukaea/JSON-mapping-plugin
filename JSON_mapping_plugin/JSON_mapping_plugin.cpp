@@ -191,14 +191,23 @@ SignalType JSONMappingPlugin::deduce_signal_type(std::string_view element_back_s
 
 int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface,
                                                        nlohmann::json& attributes) {
-    // TODO: need to make this generic for any machine
-    int run{-1};
-    int shot{0};
-    FIND_INT_VALUE(plugin_interface->request_data->nameValueList, run);
-    FIND_REQUIRED_INT_VALUE(plugin_interface->request_data->nameValueList, shot)
 
-    attributes["shot"] = shot;
-    attributes["run"] = run;
+    for (int i = 0; i < plugin_interface->request_data->nameValueList.pairCount; ++i) {
+        std::string const name = plugin_interface->request_data->nameValueList.nameValue[i].name;
+        std::string const value = plugin_interface->request_data->nameValueList.nameValue[i].value;
+
+        if (name == "machine" || name == "path" || name == "rank" || name == "shape" || name == "datatype") {
+            continue;
+        }
+
+        char* p_end = nullptr;
+        long const i_value = std::strtol(value.c_str(), &p_end, 10);
+        if (*p_end == '\0') {
+            attributes[name] = i_value;
+        } else {
+            attributes[name] = value;
+        }
+    }
 
     return 0;
 }
@@ -272,10 +281,13 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // Use first hash of the IDS path as the IDS name
     std::string const ids_name{path_tokens.front()};
 
+    std::string machine_string = machine;
+    boost::to_lower(machine_string);
+
     // Load mappings based off IDS name
     // Returns a reference to IDS map objects and corresponding globals
     // Mapping object lifetime owned by mapping_handler
-    const auto maybe_mappings = m_mapping_handler.read_mappings(machine, ids_name);
+    const auto maybe_mappings = m_mapping_handler.read_mappings(machine_string, ids_name);
 
     if (!maybe_mappings) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
