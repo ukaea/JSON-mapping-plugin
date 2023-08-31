@@ -231,6 +231,8 @@ std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_t
             if (mappings.count(map_path) == 0) {
                 return {};
             }
+        } else {
+            return {};
         }
     }
 
@@ -281,6 +283,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // Use first hash of the IDS path as the IDS name
     std::string const ids_name{path_tokens.front()};
 
+    // Use lowercase machine name for find mapping files
     std::string machine_string = machine;
     boost::to_lower(machine_string);
 
@@ -313,7 +316,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     MapArguments const map_arguments{plugin_interface, mappings, attributes};
 
-    return mappings[map_path]->map(map_arguments);
+    return mappings.at(map_path)->map(map_arguments);
 }
 
 int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function) {

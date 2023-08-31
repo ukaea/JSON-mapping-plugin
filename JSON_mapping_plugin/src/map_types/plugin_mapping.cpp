@@ -22,26 +22,26 @@
  */
 std::string PluginMapping::get_request_str(const MapArguments& arguments) const {
 
-    // TODO: replace dependence on boost in the future
-    // stringstream?
-    std::string request_str = m_plugin + "::get(";
+    std::stringstream string_stream;
+    string_stream << m_plugin << "::" << m_function.value_or("get") << "(";
 
     // m_map_args 'field' currently nlohmann json
     // parse to string/bool
     // TODO: change, however std::any/std::variant functionality for free
+    const char* delim = "";
     for (const auto& [key, field] : m_map_args) {
         if (field.is_string()) {
-            request_str +=
-                (boost::format("%s=%s, ") % key %
-                 inja::render( // Double inja
-                     inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data))
-                    .str();
+            // Double inja
+            auto value = inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
+            string_stream << delim << key << "=" << value;
         } else if (field.is_boolean()) {
-            request_str += (boost::format("%s, ") % key).str();
+            string_stream << delim << key;
         } else {
             continue;
         }
+        delim = ", ";
     }
+    string_stream << ")";
 
     // TODO: shouldn't need this as all of this should come from the JSON globals for the plugin type
     //    request_str +=
@@ -52,9 +52,10 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     // if (m_slice.has_value()) {
     //     request_str += (boost::format("[%s]") % m_slice).str();
     // }
-
-    UDA_LOG(UDA_LOG_DEBUG, "AJP Request : %s\n", request_str.c_str());
-    return request_str;
+    
+    auto request = string_stream.str();
+    UDA_LOG(UDA_LOG_DEBUG, "Plugin Mapping Request : %s\n", request.c_str());
+    return request;
 }
 
 int PluginMapping::call_plugins(const MapArguments& arguments) const {

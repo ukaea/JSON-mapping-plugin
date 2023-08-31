@@ -3,6 +3,7 @@
 #include <inja/inja.hpp>
 #include <logging/logging.h>
 #include <unordered_map>
+#include <boost/algorithm/string.hpp>
 
 #include "map_types/custom_mapping.hpp"
 #include "map_types/dim_mapping.hpp"
@@ -112,7 +113,9 @@ int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t&
 }
 
 int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key, std::make_unique<ValueMapping>(value["VALUE"]));
+    auto v = value.at("VALUE");
+    auto x = new ValueMapping{v};
+    map_reg.try_emplace(key, std::unique_ptr<ValueMapping>{x});
     return 0;
 }
 
@@ -120,7 +123,7 @@ void add_plugin_args(std::unordered_map<std::string, nlohmann::json>& args, nloh
                      const std::string& plugin_name) {
     const auto& plugin_args_map = ids_attributes["PLUGIN_ARGS"].get<nlohmann::json>();
     if (plugin_args_map.count(plugin_name) != 0) {
-        const auto& plugin_args = plugin_args_map[plugin_name].get<nlohmann::json>();
+        const auto& plugin_args = plugin_args_map.at(plugin_name).get<nlohmann::json>();
         for (const auto& [name, arg] : plugin_args.items()) {
             if (args.count(name) == 0) {
                 // don't overwrite mapping arguments with global values
@@ -151,6 +154,8 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     };
 
     auto plugin_name = value["PLUGIN"].get<std::string>();
+    boost::to_upper(plugin_name);
+
     auto args = value["ARGS"].get<MapArgs_t>();
 
     if (ids_attributes.count("PLUGIN_ARGS") != 0) {
@@ -159,7 +164,10 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
 
     auto offset = get_offset_scale("OFFSET", value);
     auto scale = get_offset_scale("SCALE", value);
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale));
+    auto function = value.contains("FUNCTION")
+                        ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
+                        : std::optional<std::string>{};
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, function));
     return 0;
 }
 

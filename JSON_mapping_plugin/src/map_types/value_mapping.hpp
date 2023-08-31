@@ -11,7 +11,7 @@ class ValueMapping : public Mapping {
     ValueMapping& operator=(ValueMapping&&) = default;
     ValueMapping& operator=(const ValueMapping&) = default;
 
-    explicit ValueMapping(nlohmann::json value) : m_value{std::move(value)} {};
+    explicit ValueMapping(nlohmann::json value) : m_value(std::move(value)) {};
     [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:
