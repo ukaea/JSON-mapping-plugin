@@ -7,7 +7,6 @@
 
 #include "utils/scale_offset.hpp"
 #include "utils/uda_plugin_helpers.hpp"
-#include <boost/format.hpp>
 #include <inja/inja.hpp>
 
 /**
@@ -52,7 +51,7 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     // if (m_slice.has_value()) {
     //     request_str += (boost::format("[%s]") % m_slice).str();
     // }
-    
+
     auto request = string_stream.str();
     UDA_LOG(UDA_LOG_DEBUG, "Plugin Mapping Request : %s\n", request.c_str());
     return request;

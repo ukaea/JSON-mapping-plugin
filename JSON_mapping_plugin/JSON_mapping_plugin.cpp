@@ -373,7 +373,7 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const st
 
         return plugin.execute(plugin_interface, function);
     } catch (const std::exception& ex) {
-        RAISE_PLUGIN_ERROR(ex.what())
+        RAISE_PLUGIN_ERROR_EX(ex.what(), { concatUdaError(&plugin_interface->error_stack); })
     }
 }
 

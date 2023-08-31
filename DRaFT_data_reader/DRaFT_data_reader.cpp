@@ -158,7 +158,7 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
 
 nlohmann::json DRaFTDataReaderPlugin::read_json_data(const std::string& signal, int shot) {
 
-    std::string const map_dir = getenv("DRaFT_DATA_DIR");
+    std::string const map_dir = getenv("UDA_DRaFT_DATA_DIR");
     std::string const data_path = map_dir + "/" + std::to_string(shot) + ".json";
     std::ifstream json_file(data_path);
     auto temp_json = nlohmann::json::parse(json_file);

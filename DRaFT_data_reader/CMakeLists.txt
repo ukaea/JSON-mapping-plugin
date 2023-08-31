@@ -11,6 +11,14 @@ set( CONFIGS
     DRaFT_data_reader.cfg
 )
 
+set( SOURCES
+    DRaFT_data_reader.cpp
+)
+
+set( HEADERS
+    DRaFT_data_reader.h
+)
+
 include( plugins )
 uda_plugin(
     NAME DRaFT_JSON
@@ -28,3 +36,8 @@ uda_plugin(
       ${UDA_CLIENT_LIBRARIES}
       uda_cpp
 )
+
+list( TRANSFORM SOURCES PREPEND ${CMAKE_CURRENT_LIST_DIR}/ )
+list( TRANSFORM HEADERS PREPEND ${CMAKE_CURRENT_LIST_DIR}/ )
+
+set_property( TARGET clang-format APPEND PROPERTY SOURCES ${SOURCES} ${HEADERS} )
