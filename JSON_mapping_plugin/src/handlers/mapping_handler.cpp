@@ -9,7 +9,6 @@
 #include "map_types/dim_mapping.hpp"
 #include "map_types/expr_mapping.hpp"
 #include "map_types/plugin_mapping.hpp"
-#include "map_types/slice_mapping.hpp"
 #include "map_types/value_mapping.hpp"
 
 std::optional<MappingPair> MappingHandler::read_mappings(const MachineName_t& machine, const std::string& request_ids) {
@@ -177,12 +176,6 @@ int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::strin
     return 0;
 }
 
-int MappingHandler::init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    map_reg.try_emplace(key, std::make_unique<SliceMapping>(value["SLICE_INDEX"].get<std::vector<std::string>>(),
-                                                            value["SIGNAL"].get<std::string>()));
-    return 0;
-}
-
 int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
     map_reg.try_emplace(
         key, std::make_unique<ExprMapping>(value["EXPR"].get<std::string>(),
@@ -209,9 +202,6 @@ int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t&
             break;
         case MappingType::DIM:
             init_dim_mapping(temp_map_reg, key, value);
-            break;
-        case MappingType::SLICE:
-            init_slice_mapping(temp_map_reg, key, value);
             break;
         case MappingType::EXPR:
             init_expr_mapping(temp_map_reg, key, value);
