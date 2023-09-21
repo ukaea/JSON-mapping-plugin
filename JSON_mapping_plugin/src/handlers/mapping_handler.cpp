@@ -1,9 +1,9 @@
 #include "mapping_handler.hpp"
 
+#include <boost/algorithm/string.hpp>
 #include <inja/inja.hpp>
 #include <logging/logging.h>
 #include <unordered_map>
-#include <boost/algorithm/string.hpp>
 
 #include "map_types/custom_mapping.hpp"
 #include "map_types/dim_mapping.hpp"
@@ -164,10 +164,11 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
 
     auto offset = get_offset_scale("OFFSET", value);
     auto scale = get_offset_scale("SCALE", value);
-    auto function = value.contains("FUNCTION")
-                        ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
-                        : std::optional<std::string>{};
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, function));
+    auto slice = value.contains("SLICE") ? std::optional<std::string>{value["SLICE"].get<std::string>()}
+                                         : std::optional<std::string>{};
+    auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
+                                               : std::optional<std::string>{};
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function));
     return 0;
 }
 

@@ -31,7 +31,8 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     for (const auto& [key, field] : m_map_args) {
         if (field.is_string()) {
             // Double inja
-            auto value = inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
+            auto value =
+                inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
             string_stream << delim << key << "=" << value;
         } else if (field.is_boolean()) {
             string_stream << delim << key;
@@ -42,15 +43,10 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     }
     string_stream << ")";
 
-    // TODO: shouldn't need this as all of this should come from the JSON globals for the plugin type
-    //    request_str +=
-    //        (boost::format("source=%i, host=%s, port=%i)") % arguments.m_shot % arguments.m_host %
-    //        arguments.m_port).str();
-
     // Add slice to request (when implemented)
-    // if (m_slice.has_value()) {
-    //     request_str += (boost::format("[%s]") % m_slice).str();
-    // }
+    if (m_slice.has_value()) {
+        string_stream << inja::render(inja::render(m_slice.value(), arguments.m_global_data), arguments.m_global_data);
+    }
 
     auto request = string_stream.str();
     UDA_LOG(UDA_LOG_DEBUG, "Plugin Mapping Request : %s\n", request.c_str());

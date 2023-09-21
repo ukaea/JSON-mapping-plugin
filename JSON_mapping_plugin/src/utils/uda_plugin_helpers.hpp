@@ -16,12 +16,10 @@ namespace imas_json_plugin::uda_helpers {
 inline std::unordered_map<std::string, UDA_TYPE> uda_type_map() {
     static std::unordered_map<std::string, UDA_TYPE> type_map;
     if (type_map.empty()) {
-        type_map = {
-            {typeid(unsigned int).name(), UDA_TYPE_UNSIGNED_INT},
-            {typeid(int).name(), UDA_TYPE_INT},
-            {typeid(float).name(), UDA_TYPE_FLOAT},
-            {typeid(double).name(), UDA_TYPE_DOUBLE}
-        };
+        type_map = {{typeid(unsigned int).name(), UDA_TYPE_UNSIGNED_INT},
+                    {typeid(int).name(), UDA_TYPE_INT},
+                    {typeid(float).name(), UDA_TYPE_FLOAT},
+                    {typeid(double).name(), UDA_TYPE_DOUBLE}};
     }
     return type_map;
 }
