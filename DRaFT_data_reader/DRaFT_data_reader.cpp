@@ -102,10 +102,8 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
     const auto type = read_json_data(signal + "_type", shot).get<std::string>();
     const auto rank = read_json_data(signal + "_rank", shot).get<int>();
 
-    const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{{typeid(int).name(), UDA_TYPE_INT},
-                                                                 {typeid(float).name(), UDA_TYPE_FLOAT},
-                                                                 {typeid(double).name(), UDA_TYPE_DOUBLE}};
-
+    const std::unordered_map<std::string, UDA_TYPE> UDA_TYPE_MAP{
+        {"int", UDA_TYPE_INT}, {"float", UDA_TYPE_FLOAT}, {"string", UDA_TYPE_STRING}};
     // All DRaFT data is rank 1 : other experiments would need to expand
     if (rank > 0) {
         switch (UDA_TYPE_MAP.at(type)) {
@@ -119,12 +117,6 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
             auto vec_values = data.get<std::vector<float>>();
             const size_t shape{vec_values.size()};
             err = setReturnDataFloatArray(data_block, vec_values.data(), rank, &shape, nullptr);
-            break;
-        }
-        case UDA_TYPE_DOUBLE: {
-            auto vec_values = data.get<std::vector<double>>();
-            const size_t shape{vec_values.size()};
-            err = setReturnDataDoubleArray(data_block, vec_values.data(), rank, &shape, nullptr);
             break;
         }
         default:
@@ -143,9 +135,9 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
             err = setReturnDataFloatScalar(data_block, value, nullptr);
             break;
         }
-        case UDA_TYPE_DOUBLE: {
-            auto value = data.get<double>();
-            err = setReturnDataDoubleScalar(data_block, value, nullptr);
+        case UDA_TYPE_STRING: {
+            auto value = data.get<std::string>();
+            err = setReturnDataString(data_block, value.c_str(), nullptr);
             break;
         }
         default:
@@ -158,7 +150,7 @@ int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, s
 
 nlohmann::json DRaFTDataReaderPlugin::read_json_data(const std::string& signal, int shot) {
 
-    std::string const map_dir = getenv("UDA_DRaFT_DATA_DIR");
+    std::string const map_dir = getenv("DRaFT_DATA_DIR");
     std::string const data_path = map_dir + "/" + std::to_string(shot) + ".json";
     std::ifstream json_file(data_path);
     auto temp_json = nlohmann::json::parse(json_file);

@@ -21,7 +21,6 @@ set( SOURCES
     src/map_types/dim_mapping.cpp
     src/map_types/expr_mapping.cpp
     src/map_types/plugin_mapping.cpp
-    src/map_types/slice_mapping.cpp
     src/map_types/value_mapping.cpp
     src/handlers/mapping_handler.cpp
 )
@@ -36,7 +35,6 @@ set( HEADERS
     src/map_types/expr_mapping.hpp
     src/map_types/map_arguments.hpp
     src/map_types/plugin_mapping.hpp
-    src/map_types/slice_mapping.hpp
     src/map_types/value_mapping.hpp
     src/handlers/mapping_handler.hpp
 )
