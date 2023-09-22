@@ -43,8 +43,7 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     }
     string_stream << ")";
 
-    // Add slice to request (when implemented)
-    if (m_slice.has_value()) {
+    if (m_slice.has_value() && arguments.m_sig_type != SignalType::DIM) {
         string_stream << inja::render(inja::render(m_slice.value(), arguments.m_global_data), arguments.m_global_data);
     }
 
