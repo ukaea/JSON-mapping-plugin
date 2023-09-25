@@ -8,15 +8,7 @@ int DimMapping::map(const MapArguments& arguments) const {
         return 1;
     }
 
-    // SignalType needs to be changed to DIM to avoid slicing
-    // Temporary hack to change const arguments
-    //
-    // Alternative would be to have an _extra entry in the mapping
-    // file sans slicing
-    MapArguments temp_map_args = arguments;
-    temp_map_args.m_sig_type = SignalType::DIM;
-
-    const int err = arguments.m_entries.at(m_dim_probe)->map(temp_map_args);
+    const int err = arguments.m_entries.at(m_dim_probe)->map(arguments);
     if (err == 0) {
         free((void*)arguments.m_interface->data_block->data); // fix
         arguments.m_interface->data_block->data = nullptr;
