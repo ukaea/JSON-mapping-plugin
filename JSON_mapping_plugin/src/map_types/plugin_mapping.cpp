@@ -72,6 +72,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         return err;
     }
 
+    // scale takes precedence
     if (m_scale.has_value()) {
         err = JMP::map_transform::transform_scale(arguments.m_interface->data_block, m_scale.value());
     }
@@ -82,4 +83,12 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     return err;
 }
 
-int PluginMapping::map(const MapArguments& arguments) const { return call_plugins(arguments); }
+int PluginMapping::map(const MapArguments& arguments) const {
+
+    int err = call_plugins(arguments);
+    // temporary solution to the slice functionality returning arrays of 1 element
+    if (arguments.m_interface->data_block->rank == 1 and arguments.m_interface->data_block->data_n == 1) {
+        arguments.m_interface->data_block->rank = 0;
+    }
+    return err;
+}

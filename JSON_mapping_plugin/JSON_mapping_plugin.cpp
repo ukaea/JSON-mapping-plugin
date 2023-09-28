@@ -304,6 +304,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // magnetics/coil/#/current -> coil/#/current
     path_tokens.pop_front();
 
+    const auto sig_type = deduce_signal_type(path_tokens.back());
     std::string const map_path = generate_map_path(path_tokens, mappings);
     if (map_path.empty()) {
         return 1; // No mapping found, don't throw
@@ -314,7 +315,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     add_machine_specific_attributes(plugin_interface, attributes);
 
-    MapArguments const map_arguments{plugin_interface, mappings, attributes};
+    MapArguments const map_arguments{plugin_interface, mappings, attributes, sig_type};
 
     return mappings.at(map_path)->map(map_arguments);
 }

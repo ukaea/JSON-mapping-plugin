@@ -95,6 +95,7 @@ set( BUILT_PLUGINS "${PLUGINS}" )
 message( STATUS "PLUGINS: ${PLUGINS}" )
 add_subdirectory( JSON_mapping_plugin )
 add_subdirectory( DRaFT_data_reader )
+add_subdirectory( temp_geom_plugin )
 
 #
 # Generate scripts
