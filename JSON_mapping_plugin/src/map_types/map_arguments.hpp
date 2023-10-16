@@ -16,8 +16,7 @@ struct MapArguments {
 
     explicit MapArguments(IDAM_PLUGIN_INTERFACE* interface,
                           const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
-                          const nlohmann::json& global_data,
-                          const SignalType sig_type)
+                          const nlohmann::json& global_data, const SignalType sig_type)
         : m_entries{entries}, m_interface{interface}, m_global_data{global_data}, m_sig_type{sig_type},
           m_datatype{UDA_TYPE_UNKNOWN} {
         extract_interface_arguments(interface);

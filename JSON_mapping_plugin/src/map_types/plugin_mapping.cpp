@@ -32,7 +32,8 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
         if (field.is_string()) {
             // Double inja
             try {
-                auto value = inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
+                auto value = inja::render(inja::render(field.get<std::string>(), arguments.m_global_data),
+                                          arguments.m_global_data);
                 string_stream << delim << key << "=" << value;
             } catch (std::exception& e) {
                 UDA_LOG(UDA_LOG_DEBUG, "Inja template error in request : %s\n", e.what());
@@ -74,7 +75,8 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     if (err) {
         // add check of int udaNumErrors() and if more than one, don't wipe
         // 220 situation when UDA tries to get data and cannot find it
-        if (err == 220) closeUdaError();
+        if (err == 220)
+            closeUdaError();
         return err;
     } // return code if failure, no need to proceed
 

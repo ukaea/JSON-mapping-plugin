@@ -156,8 +156,7 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     boost::to_upper(plugin_name);
 
     auto args = value["ARGS"].get<MapArgs_t>();
-    auto flags = value.contains("FLAGS") ? value["FLAGS"].get<MapFlags_t>()
-                                         : std::vector<std::string>();
+    auto flags = value.contains("FLAGS") ? value["FLAGS"].get<MapFlags_t>() : std::vector<std::string>();
 
     if (ids_attributes.count("PLUGIN_ARGS") != 0) {
         add_plugin_args(args, ids_attributes, plugin_name);

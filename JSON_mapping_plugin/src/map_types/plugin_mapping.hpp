@@ -10,10 +10,10 @@ using MapFlags_t = std::vector<std::string>;
 class PluginMapping : public Mapping {
   public:
     PluginMapping() = delete;
-    PluginMapping(std::string plugin, MapArgs_t request_args, MapFlags_t request_flags, std::optional<float> offset, std::optional<float> scale,
-                  std::optional<std::string> slice, std::optional<std::string> function)
-        : m_plugin{std::move(plugin)}, m_map_args{std::move(request_args)}, m_map_flags{std::move(request_flags)}, m_offset{offset}, m_scale{scale},
-          m_slice{slice}, m_function{function} {};
+    PluginMapping(std::string plugin, MapArgs_t request_args, MapFlags_t request_flags, std::optional<float> offset,
+                  std::optional<float> scale, std::optional<std::string> slice, std::optional<std::string> function)
+        : m_plugin{std::move(plugin)}, m_map_args{std::move(request_args)}, m_map_flags{std::move(request_flags)},
+          m_offset{offset}, m_scale{scale}, m_slice{slice}, m_function{function} {};
 
     [[nodiscard]] int map(const MapArguments& arguments) const override;
 
