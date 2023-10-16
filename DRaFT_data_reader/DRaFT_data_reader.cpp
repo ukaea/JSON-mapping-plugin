@@ -82,17 +82,8 @@ int DRaFTDataReaderPlugin::return_DRaFT_data_time(DATA_BLOCK* data_block, int sh
 
     const auto data = read_json_data(signal, shot);
     auto vec_values = data.get<std::vector<float>>();
-    const size_t shape{vec_values.size()};
-    int err = setReturnDataFloatArray(data_block, vec_values.data(), 1, &shape, nullptr);
-    // Cleanup to make things behave
-    data_block->order = -1;
-    data_block->dims[0].dim = nullptr;
-    data_block->dims[0].data_type = UDA_TYPE_UNSIGNED_INT;
-    data_block->dims[0].compressed = 1;
-    data_block->dims[0].method = 0;
-    data_block->dims[0].dim0 = 0.0;
-    data_block->dims[0].diff = 1.0;
-    return err;
+    const size_t shape = vec_values.size();
+    return setReturnDataFloatArray(data_block, vec_values.data(), 1, &shape, nullptr);
 }
 
 int DRaFTDataReaderPlugin::return_DRaFT_data(DATA_BLOCK* data_block, int shot, std::string signal) {

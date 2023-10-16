@@ -19,9 +19,5 @@ template int ExprMapping::eval_expr<float>(const MapArguments& arguments) const;
 int ExprMapping::map(const MapArguments& arguments) const {
 
     // Float only currently for testing purposes
-    int err = eval_expr<float>(arguments);
-    if (arguments.m_interface->data_block->rank == 1 and arguments.m_interface->data_block->data_n == 1) {
-        arguments.m_interface->data_block->rank = 0;
-    }
-    return err;
+    return eval_expr<float>(arguments);
 };

@@ -8,7 +8,7 @@ int DimMapping::map(const MapArguments& arguments) const {
         return 1;
     }
 
-    const int err = arguments.m_entries.at(m_dim_probe)->map(arguments);
+    int err = arguments.m_entries.at(m_dim_probe)->map(arguments);
     if (err == 0) {
         free((void*)arguments.m_interface->data_block->data); // fix
         arguments.m_interface->data_block->data = nullptr;
@@ -16,7 +16,7 @@ int DimMapping::map(const MapArguments& arguments) const {
             UDA_LOG(UDA_LOG_DEBUG, "\nDimMapping::map: Dim probe could not be used for Shape_of \n");
             return 1;
         }
-        setReturnDataIntScalar(arguments.m_interface->data_block, arguments.m_interface->data_block->data_n, nullptr);
+        err = setReturnDataIntScalar(arguments.m_interface->data_block, arguments.m_interface->data_block->data_n, nullptr);
     }
     return err;
 }
