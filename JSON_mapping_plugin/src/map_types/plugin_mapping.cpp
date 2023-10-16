@@ -31,9 +31,13 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     for (const auto& [key, field] : m_map_args) {
         if (field.is_string()) {
             // Double inja
-            auto value =
-                inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
-            string_stream << delim << key << "=" << value;
+            try {
+                auto value = inja::render(inja::render(field.get<std::string>(), arguments.m_global_data), arguments.m_global_data);
+                string_stream << delim << key << "=" << value;
+            } catch (std::exception& e) {
+                UDA_LOG(UDA_LOG_DEBUG, "Inja template error in request : %s\n", e.what());
+                return {};
+            }
         } else if (field.is_boolean()) {
             string_stream << delim << key;
         } else {
@@ -41,6 +45,12 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
         }
         delim = ", ";
     }
+
+    for (const auto& flag : m_map_flags) {
+        string_stream << delim << flag;
+        delim = ", ";
+    }
+
     string_stream << ")";
 
     if (m_slice.has_value() && arguments.m_sig_type != SignalType::DIM) {
@@ -62,10 +72,13 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
     if (err) {
+        // add check of int udaNumErrors() and if more than one, don't wipe
+        // 220 situation when UDA tries to get data and cannot find it
+        if (err == 220) closeUdaError();
         return err;
     } // return code if failure, no need to proceed
 
-    if (arguments.m_sig_type == SignalType::TIME) {
+    if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
         err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
