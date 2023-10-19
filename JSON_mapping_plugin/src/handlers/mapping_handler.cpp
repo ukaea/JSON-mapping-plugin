@@ -133,7 +133,7 @@ void add_plugin_args(std::unordered_map<std::string, nlohmann::json>& args, nloh
 }
 
 int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
-                                        nlohmann::json ids_attributes) {
+                                        nlohmann::json ids_attributes, std::shared_ptr<ram_cache::RamCache> ram_cache) {
     // Structured bindings lambda capture bug, json passed as argument
     auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
         std::optional<float> opt_float{std::nullopt};
@@ -168,7 +168,7 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
                                          : std::optional<std::string>{};
     auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
                                                : std::optional<std::string>{};
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, flags, offset, scale, slice, function));
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, flags, offset, scale, slice, function, ram_cache));
     return 0;
 }
 
@@ -199,7 +199,7 @@ int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t&
             init_value_mapping(temp_map_reg, key, value);
             break;
         case MappingType::PLUGIN:
-            init_plugin_mapping(temp_map_reg, key, value, attributes.at(ids_name));
+            init_plugin_mapping(temp_map_reg, key, value, attributes.at(ids_name), m_ram_cache);
             break;
         case MappingType::DIM:
             init_dim_mapping(temp_map_reg, key, value);

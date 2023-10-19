@@ -6,6 +6,7 @@
 #include <unordered_map>
 
 #include "map_types/base_mapping.hpp"
+#include "utils/ram_cache.hpp"
 #include <nlohmann/json.hpp>
 
 using IDSName_t = std::string;
@@ -27,8 +28,8 @@ using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 class MappingHandler {
 
   public:
-    MappingHandler() : m_init(false), m_dd_version("3.37"){};
-    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
+    MappingHandler() : m_init(false), m_dd_version("3.37"), m_ram_cache(std::make_shared<ram_cache::RamCache>()) {};
+    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)), m_ram_cache(std::make_shared<ram_cache::RamCache>()){};
 
     int reset() {
         m_machine_register.clear();
@@ -56,7 +57,7 @@ class MappingHandler {
 
     static int init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
     static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
-                                   nlohmann::json ids_attributes);
+                                   nlohmann::json ids_attributes, std::shared_ptr<ram_cache::RamCache> ram_cache);
     static int init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
     static int init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
     static int init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value);
@@ -68,4 +69,5 @@ class MappingHandler {
     std::string m_dd_version;
     std::string m_mapping_dir;
     nlohmann::json m_mapping_config;
+    std::shared_ptr<ram_cache::RamCache> m_ram_cache;
 };

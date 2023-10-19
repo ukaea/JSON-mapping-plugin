@@ -8,6 +8,14 @@
 #include "utils/scale_offset.hpp"
 #include "utils/uda_plugin_helpers.hpp"
 #include <inja/inja.hpp>
+#include <plugins/udaPlugin.h>
+#include <utils/ram_cache.hpp>
+
+// TODO:
+//  - print data array before and after caching
+//  - print whole datablock before and after caching -- differences? (other params?)
+//  - handle compressed dims
+//  - handle error arrays (how to determine not empty?)
 
 /**
  * @brief
@@ -71,15 +79,63 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         return err;
     } // Return 1 if no request receieved
 
-    err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
-    if (err) {
-        // add check of int udaNumErrors() and if more than one, don't wipe
-        // 220 situation when UDA tries to get data and cannot find it
-        if (err == 220)
-            closeUdaError();
-        return err;
-    } // return code if failure, no need to proceed
 
+   /*
+    *
+    * CACHING GOES HERE
+    *
+    */
+    // check cache for request string and only get data if it's not already there
+    // currently copies whole datablock (data, error, and dims)
+    std::optional<DATA_BLOCK*> maybe_db = m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
+    if (maybe_db)
+    {
+        ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
+
+        // arguments.m_interface->data_block = maybe_db.value();
+        // extra plugin_interface requirements? 
+        // arguments.m_interface->data_block->signal_rec = (SIGNAL*)malloc(sizeof(SIGNAL));
+        // initSignal(arguments.m_interface->data_block->signal_rec);
+        // arguments.m_interface->data_block->data_system = (DATA_SYSTEM*)malloc(sizeof(DATA_SYSTEM));
+        // initDataSystem(arguments.m_interface->data_block->data_system);
+        // initSignalDesc(arguments.m_interface->signal_desc);
+        // initDataSource(arguments.m_interface->data_source);
+
+        ram_cache::log(ram_cache::LogLevel::INFO, "data on plugin_interface (data_n): " + std::to_string(arguments.m_interface->data_block->data_n));
+        // ram_cache::log_datablock_status(arguments.m_interface->data_block, "data_block on return interface structure");
+
+        return 0;
+
+        // DATA_BLOCK* data_block = arguments.m_interface->data_block;
+        // size_t shape = data_block->data_n;
+        // switch(data_block->data_type)
+        // {
+        //     case UDA_TYPE_DOUBLE:
+        //         err = setReturnDataDoubleArray(data_block, (double*)data_block->data, data_block->rank, &shape, nullptr);
+        //         return err;
+        //     case UDA_TYPE_FLOAT:
+        //         err = setReturnDataFloatArray(data_block, (float*)data_block->data, data_block->rank, &shape, nullptr);
+        //         return err;
+
+        // }
+    }
+    else 
+    {
+        err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
+        if (err) {
+            // add check of int udaNumErrors() and if more than one, don't wipe
+            // 220 situation when UDA tries to get data and cannot find it
+            if (err == 220)
+                closeUdaError();
+            return err;
+        } // return code if failure, no need to proceed
+
+        // Add retrieved datablock to cache. data is copied from datablock into a new ram_cache::data_entry. original data remains
+        // on block (on plugin_interface structure) for return.
+        std::shared_ptr<ram_cache::DataEntry> new_cache_entry = m_ram_cache->make_data_entry(arguments.m_interface->data_block);
+        m_ram_cache->add(request_str, new_cache_entry);
+
+    }
     if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
