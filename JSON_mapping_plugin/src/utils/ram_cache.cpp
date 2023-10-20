@@ -1,143 +1,14 @@
 #include "ram_cache.hpp"
 #include "clientserver/initStructs.h"
+#include "temp_geom_plugin/utils/uda_plugin_helpers.hpp"
 #include <clientserver/udaTypes.h>
 #include <iterator>
 #include <stdexcept>
+#include <utils/uda_type_sizes.hpp>
+
 namespace ram_cache
 {
-
-    size_t size_of_uda_type(int type_enum)
-    {
-        switch(type_enum)
-        {
-            case UDA_TYPE_SHORT:
-                return sizeof(short);
-            case UDA_TYPE_INT:
-                return sizeof(int);
-            case UDA_TYPE_LONG:
-                return sizeof(long);
-            case UDA_TYPE_LONG64:
-                return sizeof(int64_t);
-            case UDA_TYPE_UNSIGNED_SHORT:
-                return sizeof(unsigned short);
-            case UDA_TYPE_UNSIGNED_INT:
-                return sizeof(unsigned int);
-            case UDA_TYPE_UNSIGNED_LONG:
-                return sizeof(unsigned long);
-            case UDA_TYPE_UNSIGNED_LONG64:
-                return sizeof(uint64_t);
-            case UDA_TYPE_FLOAT:
-                return sizeof(float);
-            case UDA_TYPE_DOUBLE:
-                return sizeof(double);
-            default:
-                throw std::runtime_error(std::string("uda type ") + std::to_string(type_enum) + " not implemented for json_imas_mapping cache");
-        }
-    }
-
-    template<typename T>
-    std::string print_typed_buffer(T* data, int max_size)
-    {
-        std::stringstream ss;
-        ss << "[";
-        int max_elements = std::min(max_size, 10);
-        bool all_data =  max_elements == max_size;
-        if (!all_data)
-        {
-            max_elements /= 2;
-        }
-        for (unsigned int i = 0; i < max_elements; ++i)
-        {
-           ss << data[i] << ","; 
-        }
-        if (!all_data)
-        {
-            ss << " ... ";
-            for (unsigned int i = max_size-max_elements-1; i < max_size; ++i)
-            {
-                ss << data[i] << ","; 
-            } 
-        }
-        ss << "]" << std::endl;
-        return ss.str();
-    }
-
-    std::string print_uda_data_buffer(char* data, int data_type, int max_size)
-    {
-        switch (data_type)
-        {
-            case UDA_TYPE_INT:
-                return print_typed_buffer((int*) data, max_size);
-            case UDA_TYPE_SHORT:
-                return print_typed_buffer((short*) data, max_size);
-            case UDA_TYPE_LONG:
-                return print_typed_buffer((long*) data, max_size);
-            case UDA_TYPE_UNSIGNED_INT:
-                return print_typed_buffer((unsigned int*) data, max_size);
-            case UDA_TYPE_UNSIGNED_SHORT:
-                return print_typed_buffer((unsigned short*) data, max_size);
-            case UDA_TYPE_UNSIGNED_LONG:
-                return print_typed_buffer((unsigned long*) data, max_size);
-            case UDA_TYPE_FLOAT:
-                return print_typed_buffer((float*) data, max_size);
-            case UDA_TYPE_DOUBLE:
-                return print_typed_buffer((double*) data, max_size);
-            default:
-                throw std::runtime_error("unknown type " + std::to_string(data_type));
-        }
-    }
-
-    void log_datablock_status(DATA_BLOCK* data_block, std::string message)
-    {
-        std::stringstream ss;
-        ss <<  "handle       : " << data_block->handle << std::endl;
-        ss <<  "error code   : " << data_block->errcode << std::endl;
-        ss <<  "error msg    : " << data_block->error_msg << std::endl;
-        ss <<  "source status: " << data_block->source_status << std::endl;
-        ss <<  "signal status: " << data_block->signal_status << std::endl;
-        ss <<  "data_number  : " << data_block->data_n << std::endl;
-        ss <<  "rank         : " << data_block->rank << std::endl;
-        ss <<  "order        : " << data_block->order << std::endl;
-        ss <<  "data_type    : " << data_block->data_type << std::endl;
-        ss <<  "error_type   : " << data_block->error_type << std::endl;
-        ss <<  "errhi != nullptr: " << (data_block->errhi != nullptr) << std::endl;
-        ss <<  "errlo != nullptr: " << (data_block->errlo != nullptr) << std::endl;
-
-        ss <<  "opaque_type : " << data_block->opaque_type << std::endl;
-        ss <<  "opaque_count: " << data_block->opaque_count << std::endl; 
-
-        ss <<  "error model : " << data_block->error_model << std::endl;
-        ss <<  "asymmetry   : " << data_block->errasymmetry << std::endl;
-        ss <<  "error model no. params : " << data_block->error_param_n << std::endl;
-
-        ss <<  "data_units  : " << data_block->data_units << std::endl;
-        ss <<  "data_label  : " << data_block->data_label << std::endl;
-        ss <<  "data_desc   : " << data_block->data_desc << std::endl;
-
-        ss <<  "data        : " << print_uda_data_buffer(data_block->data,  data_block->data_type, data_block->data_n);
-        
-        for(unsigned int i=0; i < data_block->rank; ++i)
-        {
-            DIMS* dim = &data_block->dims[i];
-            
-            ss << "DIM BLOCK " << i << std::endl;
-            ss << "\tdata_number : " << dim->dim_n << std::endl;
-            ss << "\tdata_type   : " << dim->data_type << std::endl;
-            ss << "\tcompressed? : " << dim->compressed << std::endl;
-            ss << "\tmethod      : " << dim->method << std::endl;
-            ss << "\tstarting val: " << dim->dim0 << std::endl;
-            ss << "\tstepping val: " << dim->diff << std::endl;
-            ss << "\tdata_units  : " << dim->dim_units << std::endl;
-            ss << "\tdata_label  : " << dim->dim_label << std::endl;
-
-            if (dim->dim != nullptr)
-            {
-                ss <<  "\tdim " << i << " data : " << print_uda_data_buffer(dim->dim,  dim->data_type, dim->dim_n);
-            }
-        }
-
-        log(LogLevel::DEBUG, message + "\n" + ss.str());
-    }
+    using uda_type_utils::size_of_uda_type;
 
     std::shared_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block)
     {
@@ -159,13 +30,13 @@ namespace ram_cache
         data_entry->order = data_block->order;
         data_entry->data_type = data_block->data_type;
         
-
 //        std::copy(data_block->errhi, data_block->errhi + data_block->data_n, std::back_inserter(data_entry->error_high));
   //      std::copy(data_block->errlo, data_block->errlo + data_block->data_n, std::back_inserter(data_entry->error_high));
         data_entry->error_type = data_block->error_type;
 
         return data_entry;
     }
+
 
     std::optional<DATA_BLOCK*> RamCache::copy_from_cache(std::string key, DATA_BLOCK* data_block)
     {

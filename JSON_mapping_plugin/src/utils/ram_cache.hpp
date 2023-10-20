@@ -9,6 +9,7 @@
 #include <fstream>
 #include <chrono>
 #include <iomanip>
+#include <utils/print_uda_structs.hpp>
 #include "clientserver/udaStructs.h"
 #include <server/getServerEnvironment.h>
 /*
@@ -66,7 +67,10 @@ namespace ram_cache
         return 0;
     }
 
-   void log_datablock_status(DATA_BLOCK* data_block, std::string message); 
+    inline void log_datablock_status(DATA_BLOCK* data_block, const std::string message)
+    {
+        log(LogLevel::DEBUG, message + "\n" + uda_structs::print_data_block(data_block));
+    }
 
     struct DataEntry
     {
@@ -88,10 +92,12 @@ namespace ram_cache
             _values.reserve(_max_items);
         }
 
+
         explicit inline RamCache(uint32_t max_items) : _max_items(max_items) 
         {
             _values.reserve(_max_items);
         }
+
     
         inline void add(std::string key, std::shared_ptr<DataEntry> value)
         {
@@ -108,6 +114,12 @@ namespace ram_cache
             }
             log(LogLevel::INFO, "entry added to cache: \"" + key + "\". cache size is now " + std::to_string(_values.size()) + " / " +std::to_string(_max_items));
             log(LogLevel::INFO, "current position is now: " + std::to_string(_current_position));
+        }
+
+
+        inline bool has_entry(const std::string& key)
+        {
+            return std::find(_keys.begin(), _keys.end(), key) != _keys.end();
         }
 
 

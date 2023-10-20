@@ -1,9 +1,12 @@
 #include <cstdint>
 #include <plugins/pluginStructs.h>
+#include <server/getServerEnvironment.h>
 #include <vector>
 #include <cmath>
+#include <chrono>
 #include <clientserver/parseXML.h>
 #include <clientserver/udaStructs.h>
+#include <utils/print_uda_structs.hpp>
 
 namespace subset
 {
@@ -56,11 +59,57 @@ namespace subset
         }
     };
 
+
     void apply_subsetting(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset);
 
+
     std::vector<SubsetInfo> subset_info_converter(const SUBSET& datasubset, const DATA_BLOCK* data_block);
+
 
     template<typename T>
     std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dims, double scale_factor=1.0, double offset=0.0);
 
+
+    enum class LogLevel { DEBUG, INFO, WARNING, ERROR };
+
+
+    inline int log(LogLevel log_level, std::string_view log_msg) {
+
+        const ENVIRONMENT* environment = getServerEnvironment();
+
+        std::string const log_file_name = std::string{static_cast<const char*>(environment->logdir)} + "/subset.log";
+        std::ofstream log_file;
+        log_file.open(log_file_name, std::ios_base::out | std::ios_base::app);
+        std::time_t const time_now = std::chrono::system_clock::to_time_t(std::chrono::system_clock::now());
+        const auto timestamp = std::put_time(std::gmtime(&time_now), "%Y-%m-%d:%H:%M:%S"); // NOLINT(concurrency-mt-unsafe)
+        if (!log_file) {
+            return 1;
+        }
+
+        switch (log_level) {
+            case LogLevel::DEBUG:
+                log_file << timestamp << ":DEBUG - ";
+                break;
+            case LogLevel::INFO:
+                log_file << timestamp << ":INFO - ";
+                break;
+            case LogLevel::WARNING:
+                log_file << timestamp << ":WARNING - ";
+                break;
+            case LogLevel::ERROR:
+                log_file << timestamp << ":ERROR - ";
+                break;
+            default:
+                log_file << "LOG_LEVEL NOT DEFINED";
+        }
+        log_file << log_msg << "\n";
+        log_file.close();
+
+        return 0;
+    }
+
+    inline void log_request_status(REQUEST_DATA* request_data, const std::string message)
+    {
+        log(LogLevel::DEBUG, message + "\n" + uda_structs::print_request_data(request_data));
+    }
 }
