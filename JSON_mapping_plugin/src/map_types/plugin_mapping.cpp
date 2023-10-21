@@ -10,12 +10,12 @@
 #include <inja/inja.hpp>
 #include <plugins/udaPlugin.h>
 #include <utils/ram_cache.hpp>
-
+#include <utils/subset.hpp>
+#include <clientserver/makeRequestBlock.h>
 // TODO:
-//  - print data array before and after caching
-//  - print whole datablock before and after caching -- differences? (other params?)
 //  - handle compressed dims
 //  - handle error arrays (how to determine not empty?)
+//  - only read required data out of cache for each request (i.e. data, error, or a single dim)
 
 /**
  * @brief
@@ -79,12 +79,61 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         return err;
     } // Return 1 if no request receieved
 
+   
+    /*
+     *
+     * generate subset info then remove subset syntax copy_from_cache
+     *  request string
+     *
+     */
+
+    
+    IDAM_PLUGIN_INTERFACE* plugin_interface = arguments.m_interface;
+    REQUEST_DATA request = *plugin_interface->request_data;
+
+    request.source[0] = '\0';
+    strcpy(request.signal, request_str.c_str());
+    makeRequestData(&request, *plugin_interface->pluginList, plugin_interface->environment);
+    subset::log_request_status(&request, "request block before interception: ");
+
+
+    // better maybe to test if final char is ']' then find correspongind '[' from rfind
+    // or to use regex...
+
+    std::size_t subset_syntax_position = request_str.find('[');
+    if (subset_syntax_position!=std::string::npos)
+    {
+        ram_cache::log(ram_cache::LogLevel::DEBUG, "request before alteration: " + request_str);
+        request_str.erase(subset_syntax_position);
+        ram_cache::log(ram_cache::LogLevel::DEBUG, "request after alteration: " + request_str);
+    }
+
+    REQUEST_DATA request2 = *plugin_interface->request_data;
+
+    request2.source[0] = '\0';
+    strcpy(request2.signal, request_str.c_str());
+    makeRequestData(&request2, *plugin_interface->pluginList, plugin_interface->environment);
+    subset::log_request_status(&request2, "request block after interception: ");
+
+
+
+    std::string key_found = m_ram_cache->has_entry(request_str) ? "True" : "False";
+    ram_cache::log(ram_cache::LogLevel::DEBUG, "key, \"" + request_str + "\" in cache? " + key_found);
+    
 
    /*
     *
     * CACHING GOES HERE
     *
     */
+    // replace subset block with an empty one so we can cache un-sliced data and apply different subsets on each subsequent call
+    // subset::log_request_status(arguments.m_interface->request_data, "request block status:");
+    
+    SUBSET datasubset = request.datasubset;
+    
+    // disbale subsetting one leevel up
+    arguments.m_interface->request_data->datasubset = SUBSET(); 
+    arguments.m_interface->request_data->datasubset.nbound = 0; 
     // check cache for request string and only get data if it's not already there
     // currently copies whole datablock (data, error, and dims)
     std::optional<DATA_BLOCK*> maybe_db = m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
@@ -93,6 +142,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
 
         // arguments.m_interface->data_block = maybe_db.value();
+
         // extra plugin_interface requirements? 
         // arguments.m_interface->data_block->signal_rec = (SIGNAL*)malloc(sizeof(SIGNAL));
         // initSignal(arguments.m_interface->data_block->signal_rec);
@@ -104,24 +154,15 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         ram_cache::log(ram_cache::LogLevel::INFO, "data on plugin_interface (data_n): " + std::to_string(arguments.m_interface->data_block->data_n));
         // ram_cache::log_datablock_status(arguments.m_interface->data_block, "data_block on return interface structure");
 
-        return 0;
+        // return 0;
+        err = 0;
 
-        // DATA_BLOCK* data_block = arguments.m_interface->data_block;
-        // size_t shape = data_block->data_n;
-        // switch(data_block->data_type)
-        // {
-        //     case UDA_TYPE_DOUBLE:
-        //         err = setReturnDataDoubleArray(data_block, (double*)data_block->data, data_block->rank, &shape, nullptr);
-        //         return err;
-        //     case UDA_TYPE_FLOAT:
-        //         err = setReturnDataFloatArray(data_block, (float*)data_block->data, data_block->rank, &shape, nullptr);
-        //         return err;
-
-        // }
     }
     else 
     {
         err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
+        subset::log_request_status(arguments.m_interface->request_data, "request block status:");
+
         if (err) {
             // add check of int udaNumErrors() and if more than one, don't wipe
             // 220 situation when UDA tries to get data and cannot find it
@@ -136,6 +177,17 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         m_ram_cache->add(request_str, new_cache_entry);
 
     }
+
+    // this is the line causing unexpected subsetting... 
+    arguments.m_interface->request_data->datasubset = datasubset;
+    if (datasubset.nbound > 0)
+    {
+        subset::apply_subsetting(arguments.m_interface, 1.0, 0.0);
+    }
+    arguments.m_interface->request_data->datasubset = SUBSET(); 
+    arguments.m_interface->request_data->datasubset.nbound = 0; 
+
+
     if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
@@ -143,13 +195,13 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         return err;
     }
 
-    // scale takes precedence
-    if (m_scale.has_value()) {
-        err = JMP::map_transform::transform_scale(arguments.m_interface->data_block, m_scale.value());
-    }
-    if (m_offset.has_value()) {
-        err = JMP::map_transform::transform_offset(arguments.m_interface->data_block, m_offset.value());
-    }
+    // // scale takes precedence
+    // if (m_scale.has_value()) {
+    //     err = JMP::map_transform::transform_scale(arguments.m_interface->data_block, m_scale.value());
+    // }
+    // if (m_offset.has_value()) {
+    //     err = JMP::map_transform::transform_offset(arguments.m_interface->data_block, m_offset.value());
+    // }
 
     return err;
 }

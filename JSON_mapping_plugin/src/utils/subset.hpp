@@ -4,6 +4,8 @@
 #include <vector>
 #include <cmath>
 #include <chrono>
+#include <fstream>
+#include <iomanip>
 #include <clientserver/parseXML.h>
 #include <clientserver/udaStructs.h>
 #include <utils/print_uda_structs.hpp>
@@ -57,10 +59,29 @@ namespace subset
         {
             return _dim_size;
         }
+
+        [[nodiscard]] inline std::string print_to_string() const
+        {
+            std::stringstream ss;
+            ss << "start: " << _start << std::endl;
+            ss << "stop: " << _stop << std::endl;
+            ss << "stride: " << _stride << std::endl;
+            ss << "dim_size: " << _dim_size << std::endl;
+            return ss.str();
+        }
+
     };
 
 
     void apply_subsetting(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset);
+
+    template<typename T>
+    void do_a_subset(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset);
+
+    template<typename T>
+    void do_dim_subset(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset);
+
+    void apply_dim_subsetting(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset);
 
 
     std::vector<SubsetInfo> subset_info_converter(const SUBSET& datasubset, const DATA_BLOCK* data_block);

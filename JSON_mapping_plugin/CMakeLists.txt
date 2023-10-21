@@ -18,6 +18,7 @@ set( SOURCES
     src/utils/scale_offset.cpp
     src/utils/uda_plugin_helpers.cpp
     src/utils/ram_cache.cpp
+    src/utils/subset.cpp
     src/map_types/custom_mapping.cpp
     src/map_types/dim_mapping.cpp
     src/map_types/expr_mapping.cpp
@@ -31,6 +32,7 @@ set( HEADERS
     src/utils/scale_offset.hpp
     src/utils/uda_plugin_helpers.hpp
     src/utils/ram_cache.hpp
+    src/utils/subset.hpp
     src/map_types/base_mapping.hpp
     src/map_types/custom_mapping.hpp
     src/map_types/dim_mapping.hpp
