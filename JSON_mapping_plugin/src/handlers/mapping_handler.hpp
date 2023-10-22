@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdlib>
 #include <fstream>
 #include <memory>
 #include <string>
@@ -28,8 +29,20 @@ using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 class MappingHandler {
 
   public:
-    MappingHandler() : m_init(false), m_dd_version("3.37"), m_ram_cache(std::make_shared<ram_cache::RamCache>()) {};
-    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)), m_ram_cache(std::make_shared<ram_cache::RamCache>()){};
+    inline MappingHandler() : m_init(false), m_dd_version("3.37")
+    {
+        char* cache_size_str = getenv("UDA_JSON_MAPPING_CACHE_SIZE");
+        if (cache_size_str != nullptr)
+        {
+            size_t cache_size = std::stoi(cache_size_str);
+            m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
+        }
+        else 
+        {
+            // default is 100 signals
+            m_ram_cache = std::make_shared<ram_cache::RamCache>();
+        }
+    }
 
     int reset() {
         m_machine_register.clear();

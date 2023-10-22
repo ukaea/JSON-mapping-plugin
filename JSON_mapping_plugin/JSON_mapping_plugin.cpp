@@ -358,7 +358,7 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const st
 
     try {
         static JSONMappingPlugin plugin = {};
-        std::string const function = static_cast<char*>(plugin_interface->request_data->function);
+        std::string const function = plugin_interface->request_data->function;
 
         if (plugin_interface->housekeeping != 0 || function == "reset") {
             plugin.reset(plugin_interface);

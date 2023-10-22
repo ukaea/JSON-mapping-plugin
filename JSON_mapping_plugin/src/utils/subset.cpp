@@ -1,3 +1,4 @@
+#include <clientserver/compressDim.h>
 #include <plugins/pluginStructs.h>
 #include <utils/subset.hpp>
 #include <stdexcept>
@@ -84,6 +85,7 @@ namespace subset
     {
         log(LogLevel::DEBUG, "input size: " + std::to_string(input.size()));
         log(LogLevel::DEBUG, "input value 1: " + std::to_string(input[0]));
+        log(LogLevel::DEBUG, "scaling factor is " + std::to_string(scale_factor));
         unsigned int result_length = 1;
         std::vector<unsigned int> total_dim_lengths;
         std::vector<unsigned int> current_indices;
@@ -111,6 +113,7 @@ namespace subset
                 else 
                 {
                     // something wrong !
+                    throw std::runtime_error("unknown error encountered in subset function");
                 }
             }
             unsigned int input_id = get_input_offset(current_indices, factors);
@@ -149,7 +152,8 @@ namespace subset
         {
             // TODO: associate subset dimid properly...
             // auto j = subset.dimid[i]
-            apply_dim_subsetting(&data_block->dims[i], subset_dims[i], scale_factor, offset);
+            // TODO: think about dim scaling...
+            apply_dim_subsetting(&data_block->dims[i], subset_dims[i], 1.0, 0.0);
         }
     }
 
@@ -157,6 +161,20 @@ namespace subset
     void do_dim_subset(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset)
     {
         log(LogLevel::DEBUG, "Entering do_dim_subset method");
+        if (dim->compressed)
+        {
+            log(LogLevel::DEBUG, "dims were compressed");
+            uncompressDim(dim);
+            dim->compressed = 0;
+            dim->method = 0;
+            free(dim->sams);
+            free(dim->offs);
+            free(dim->ints);
+            dim->udoms = 0;
+            dim->sams = nullptr;
+            dim->offs = nullptr;
+            dim->ints = nullptr;
+        }
         size_t bytes_size = dim->dim_n * uda_type_utils::size_of_uda_type(dim->data_type);
         std::vector<T> data_in((T*)dim->dim, (T*)dim->dim + dim->dim_n); 
 
@@ -164,6 +182,7 @@ namespace subset
         auto transformed_data = subset(data_in, subset_dims, scale_factor, offset);
         free((void*) dim->dim);
         dim->dim_n = transformed_data.size();
+        log(LogLevel::DEBUG, "new dim length is: " + std::to_string(dim->dim_n));
         dim->dim = (char*) malloc(dim->dim_n * sizeof(T));
         std::copy((char*)transformed_data.data(), (char*)transformed_data.data() + dim->dim_n * sizeof(T), dim->dim);
     }
