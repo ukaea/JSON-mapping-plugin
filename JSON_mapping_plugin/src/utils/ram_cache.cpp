@@ -19,9 +19,24 @@ namespace ram_cache
         std::copy(data_block->data, data_block->data + byte_length, std::back_inserter(data_entry->data));
         for (unsigned int i=0; i < data_block->rank; ++i)
         {   
-            // if not compressed
             std::vector<char> dim_vals;
             auto dim = data_block->dims[i];
+
+            // expand any compressed dims for caching.
+            if (dim.compressed != 0)
+            {
+                uncompressDim(&dim);
+                dim.compressed = 0;
+                dim.method = 0;
+                free(dim.sams);
+                free(dim.offs);
+                free(dim.ints);
+                dim.udoms = 0;
+                dim.sams = nullptr;
+                dim.offs = nullptr;
+                dim.ints = nullptr;
+            }
+
             size_t byte_length = dim.dim_n * size_of_uda_type(dim.data_type);
             std::copy(dim.dim, dim.dim + byte_length, std::back_inserter(dim_vals));
             data_entry->dims.emplace_back(dim_vals);
