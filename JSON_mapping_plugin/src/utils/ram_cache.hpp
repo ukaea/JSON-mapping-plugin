@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 #include <vector>
 #include <algorithm>
 #include <optional>
@@ -117,6 +118,13 @@ namespace ram_cache
         }
 
 
+        inline void add(std::string key, DATA_BLOCK* data_block)
+        {
+            auto new_cache_entry = make_data_entry(data_block);
+            add(std::move(key), new_cache_entry);
+        }
+
+
         inline bool has_entry(const std::string& key)
         {
             return std::find(_keys.begin(), _keys.end(), key) != _keys.end();
@@ -124,7 +132,7 @@ namespace ram_cache
 
 
         std::shared_ptr<DataEntry> make_data_entry(DATA_BLOCK* data_block);
-        std::optional<DATA_BLOCK*> copy_from_cache(std::string key, DATA_BLOCK* data_block);
+        bool copy_from_cache(std::string key, DATA_BLOCK* data_block);
 
         private:
         uint32_t _max_items = 100;

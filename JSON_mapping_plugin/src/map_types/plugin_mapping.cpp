@@ -125,32 +125,10 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     // check cache for request string and only get data if it's not already there
     // currently copies whole datablock (data, error, and dims)
-    std::optional<DATA_BLOCK*> maybe_db = m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
-    if (maybe_db)
+    bool cache_hit = m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
+    if (cache_hit)
     {
         ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
-
-        // // currently modifying datablock in-place
-        // arguments.m_interface->data_block = maybe_db.value();
-
-        /* 
-         * CAN PROBABLY DELETE 
-         *
-         * but would be nice to get cache read working without changing datablock in-place
-         *
-         * TODO: change copy_from_cache not to modify data_block in-place
-         *
-        // extra plugin_interface requirements? 
-        // arguments.m_interface->data_block->signal_rec = (SIGNAL*)malloc(sizeof(SIGNAL));
-        // initSignal(arguments.m_interface->data_block->signal_rec);
-        // arguments.m_interface->data_block->data_system = (DATA_SYSTEM*)malloc(sizeof(DATA_SYSTEM));
-        // initDataSystem(arguments.m_interface->data_block->data_system);
-        // initSignalDesc(arguments.m_interface->signal_desc);
-        // initDataSource(arguments.m_interface->data_source);
-         *
-         *
-         */
-
         ram_cache::log(ram_cache::LogLevel::INFO, "data on plugin_interface (data_n): " + std::to_string(arguments.m_interface->data_block->data_n));
         err = 0;
     }
@@ -169,10 +147,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
         // Add retrieved datablock to cache. data is copied from datablock into a new ram_cache::data_entry. original data remains
         // on block (on plugin_interface structure) for return.
-        // TODO: update RamCache interface to add entry in one line only, taking key and datablock as arguments.
-        std::shared_ptr<ram_cache::DataEntry> new_cache_entry = m_ram_cache->make_data_entry(arguments.m_interface->data_block);
-        m_ram_cache->add(request_str, new_cache_entry);
-
+        m_ram_cache->add(request_str, arguments.m_interface->data_block);
     }
 
     // this is the line means the subset block is now populated on the plugin_interface
@@ -224,7 +199,6 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
             err = JMP::map_transform::transform_offset(arguments.m_interface->data_block, m_offset.value());
         }
     }
-
 
     if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
         // Opportunity to handle time differently

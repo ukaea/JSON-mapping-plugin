@@ -53,12 +53,12 @@ namespace ram_cache
     }
 
 
-    std::optional<DATA_BLOCK*> RamCache::copy_from_cache(std::string key, DATA_BLOCK* data_block)
+    bool RamCache::copy_from_cache(std::string key, DATA_BLOCK* data_block)
     {
         auto it = std::find(_keys.begin(), _keys.end(), key); 
         if (it == _keys.end())
         {
-            return {};
+            return false;
         }
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
@@ -105,7 +105,7 @@ namespace ram_cache
         data_block->order = data_entry->order; 
 
         log_datablock_status(data_block, "data_block from cache");
-        return data_block;
+        return true;
     }
 
 }
