@@ -109,7 +109,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         ram_cache::log(ram_cache::LogLevel::INFO, "request after alteration: " + request_str);
     }
 
-    std::string key_found = m_ram_cache->has_entry(request_str) ? "True" : "False";
+    std::string key_found = m_cache_enabled and m_ram_cache->has_entry(request_str) ? "True" : "False";
     ram_cache::log(ram_cache::LogLevel::DEBUG, "key, \"" + request_str + "\" in cache? " + key_found);
     
 
@@ -125,7 +125,8 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     // check cache for request string and only get data if it's not already there
     // currently copies whole datablock (data, error, and dims)
-    bool cache_hit = m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
+    if (!m_cache_enabled) ram_cache::log(ram_cache::LogLevel::DEBUG,"caching disbaled");
+    bool cache_hit = m_cache_enabled and m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
     if (cache_hit)
     {
         ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
@@ -147,7 +148,10 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
         // Add retrieved datablock to cache. data is copied from datablock into a new ram_cache::data_entry. original data remains
         // on block (on plugin_interface structure) for return.
-        m_ram_cache->add(request_str, arguments.m_interface->data_block);
+        if (m_cache_enabled)
+        {
+            m_ram_cache->add(request_str, arguments.m_interface->data_block);
+        }
     }
 
     // this is the line means the subset block is now populated on the plugin_interface

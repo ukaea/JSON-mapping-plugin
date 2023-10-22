@@ -29,20 +29,8 @@ using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 class MappingHandler {
 
   public:
-    inline MappingHandler() : m_init(false), m_dd_version("3.37")
-    {
-        char* cache_size_str = getenv("UDA_JSON_MAPPING_CACHE_SIZE");
-        if (cache_size_str != nullptr)
-        {
-            size_t cache_size = std::stoi(cache_size_str);
-            m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
-        }
-        else 
-        {
-            // default is 100 signals
-            m_ram_cache = std::make_shared<ram_cache::RamCache>();
-        }
-    }
+    MappingHandler() : m_init(false), m_dd_version("3.37"){};
+    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
 
     int reset() {
         m_machine_register.clear();
@@ -54,6 +42,22 @@ class MappingHandler {
         if (m_init || !m_machine_register.empty()) {
             return 0;
         }
+
+        char* cache_size_str = getenv("UDA_JSON_MAPPING_CACHE_SIZE");
+        char* enable_caching_str = getenv("UDA_JSON_MAPPING_USE_CACHE");
+
+        bool enable_caching = (enable_caching_str == nullptr) or (std::stoi(enable_caching_str) > 0);
+
+        if (enable_caching)
+        {
+            size_t cache_size = (cache_size_str != nullptr) ? std::stoi(cache_size_str) : ram_cache::default_size;
+            m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
+        }
+        else 
+        {
+            m_ram_cache = nullptr;
+        }
+        m_cache_enabled = m_ram_cache != nullptr;
 
         m_init = true;
         return 0;
@@ -83,4 +87,5 @@ class MappingHandler {
     std::string m_mapping_dir;
     nlohmann::json m_mapping_config;
     std::shared_ptr<ram_cache::RamCache> m_ram_cache;
+    bool m_cache_enabled;
 };

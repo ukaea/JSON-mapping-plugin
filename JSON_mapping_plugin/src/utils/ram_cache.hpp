@@ -85,6 +85,8 @@ namespace ram_cache
         int error_type;
     };
 
+    const static int default_size = 100;
+
     class RamCache
     {
         public:
@@ -135,11 +137,10 @@ namespace ram_cache
         bool copy_from_cache(std::string key, DATA_BLOCK* data_block);
 
         private:
-        uint32_t _max_items = 100;
+        uint32_t _max_items = default_size;
         uint32_t _current_position = 0;
         std::vector<std::string> _keys;
         std::vector<std::shared_ptr<DataEntry>> _values;
-
     };
     
 }
