@@ -37,8 +37,8 @@ namespace ram_cache
                 dim.ints = nullptr;
             }
 
-            size_t byte_length = dim.dim_n * size_of_uda_type(dim.data_type);
-            std::copy(dim.dim, dim.dim + byte_length, std::back_inserter(dim_vals));
+            size_t dim_byte_length = dim.dim_n * size_of_uda_type(dim.data_type);
+            std::copy(dim.dim, dim.dim + dim_byte_length, std::back_inserter(dim_vals));
             data_entry->dims.emplace_back(dim_vals);
             data_entry->dim_types.emplace_back(dim.data_type);
         }
@@ -91,7 +91,7 @@ namespace ram_cache
         {
             initDimBlock(&dims[i]);
 
-            dims[i].dim_n = data_entry->dims[i].size() / size_of_uda_type(dims[i].data_type);
+            dims[i].dim_n = data_entry->dims[i].size() / size_of_uda_type(data_entry->dim_types[i]);
             log(LogLevel::INFO, "dim " + std::to_string(i) + " length: " + std::to_string(dims[i].dim_n));
 
             dims[i].dim = nullptr;
@@ -143,7 +143,7 @@ namespace ram_cache
         {
             initDimBlock(&dims[i]);
 
-            dims[i].dim_n = data_entry->dims[i].size() / size_of_uda_type(dims[i].data_type);
+            dims[i].dim_n = data_entry->dims[i].size() / size_of_uda_type(data_entry->dim_types[i]);
             log(LogLevel::INFO, "dim " + std::to_string(i) + " length: " + std::to_string(dims[i].dim_n));
 
             dims[i].dim = nullptr;
