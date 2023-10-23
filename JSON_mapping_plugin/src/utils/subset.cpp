@@ -17,7 +17,7 @@ namespace subset
     {
         if (datasubset.nbound != data_block->rank)
         {
-            throw std::runtime_error("Number of subset dimensions specified must equal dimensions of data");
+            throw std::runtime_error("Number of subset dimensions specified must equal dimensions of data: " + std::to_string(datasubset.nbound) + " != " + std::to_string(data_block->rank));
         }
         std::vector<SubsetInfo> result;
         for (unsigned int i=0; i< datasubset.nbound; ++i)
@@ -30,6 +30,7 @@ namespace subset
             uint64_t start = datasubset.lbindex[i].init ? datasubset.lbindex[i].value : 0;
             uint64_t stop = datasubset.ubindex[i].init ? datasubset.ubindex[i].value : 0;
             int64_t stride = datasubset.stride[i].init ? datasubset.stride[i].value : 1;
+            stride = (stride == 0) ? 1 : stride;
             result.emplace_back(start, stop, stride, dim_n); 
             log(LogLevel::DEBUG, "subset info conversion dim: " + std::to_string(i) + "\n" + result[i].print_to_string());
         }
@@ -188,84 +189,85 @@ namespace subset
     }
 
 
-       void apply_dim_subsetting(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset)
+    void apply_dim_subsetting(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset)
     {
-       switch(dim->data_type)
-       {
-           case UDA_TYPE_SHORT:
-               do_dim_subset<short>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_INT:
-               do_dim_subset<int>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_LONG:
-               do_dim_subset<long>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_LONG64:
-               do_dim_subset<int64_t>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_SHORT:
-               do_dim_subset<unsigned short>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_INT:
-               do_dim_subset<unsigned int>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_LONG:
-               do_dim_subset<unsigned long>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_LONG64:
-               do_dim_subset<uint64_t>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_FLOAT:
-               do_dim_subset<float>(dim, subset_info, scale_factor, offset);
-               break;
-           case UDA_TYPE_DOUBLE:
-               do_dim_subset<double>(dim, subset_info, scale_factor, offset);
-               break;
-           default:
-               throw std::runtime_error(std::string("uda type ") + std::to_string(dim->data_type) + " not implemented for json_imas_mapping cache");
-       }
+        switch(dim->data_type)
+        {
+            case UDA_TYPE_SHORT:
+                do_dim_subset<short>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_INT:
+                do_dim_subset<int>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_LONG:
+                do_dim_subset<long>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_LONG64:
+                do_dim_subset<int64_t>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_SHORT:
+                do_dim_subset<unsigned short>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_INT:
+                do_dim_subset<unsigned int>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_LONG:
+                do_dim_subset<unsigned long>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_LONG64:
+                do_dim_subset<uint64_t>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_FLOAT:
+                do_dim_subset<float>(dim, subset_info, scale_factor, offset);
+                break;
+            case UDA_TYPE_DOUBLE:
+                do_dim_subset<double>(dim, subset_info, scale_factor, offset);
+                break;
+            default:
+                throw std::runtime_error(std::string("uda type ") + std::to_string(dim->data_type) + " not implemented for json_imas_mapping cache");
+        }
     }
 
     void apply_subsetting(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset)
     {
         log(LogLevel::DEBUG, "Entering apply subsetting function");
-       switch(plugin_interface->data_block->data_type)
-       {
-           case UDA_TYPE_SHORT:
-               do_a_subset<short>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_INT:
-               do_a_subset<int>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_LONG:
-               do_a_subset<long>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_LONG64:
-               do_a_subset<int64_t>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_SHORT:
-               do_a_subset<unsigned short>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_INT:
-               do_a_subset<unsigned int>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_LONG:
-               do_a_subset<unsigned long>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_UNSIGNED_LONG64:
-               do_a_subset<uint64_t>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_FLOAT:
-               log(LogLevel::DEBUG, "uda type is float");
-               do_a_subset<float>(plugin_interface, scale_factor, offset);
-               break;
-           case UDA_TYPE_DOUBLE:
-               do_a_subset<double>(plugin_interface, scale_factor, offset);
-               break;
-           default:
-               throw std::runtime_error(std::string("uda type ") + std::to_string(plugin_interface->data_block->data_type) + " not implemented for json_imas_mapping cache");
-       }
+        if (plugin_interface->data_block->rank == 0) return;
+        switch(plugin_interface->data_block->data_type)
+        {
+            case UDA_TYPE_SHORT:
+                do_a_subset<short>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_INT:
+                do_a_subset<int>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_LONG:
+                do_a_subset<long>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_LONG64:
+                do_a_subset<int64_t>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_SHORT:
+                do_a_subset<unsigned short>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_INT:
+                do_a_subset<unsigned int>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_LONG:
+                do_a_subset<unsigned long>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_UNSIGNED_LONG64:
+                do_a_subset<uint64_t>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_FLOAT:
+                log(LogLevel::DEBUG, "uda type is float");
+                do_a_subset<float>(plugin_interface, scale_factor, offset);
+                break;
+            case UDA_TYPE_DOUBLE:
+                do_a_subset<double>(plugin_interface, scale_factor, offset);
+                break;
+            default:
+                throw std::runtime_error(std::string("uda type ") + std::to_string(plugin_interface->data_block->data_type) + " not implemented for json_imas_mapping cache");
+        }
     }
 
 }
