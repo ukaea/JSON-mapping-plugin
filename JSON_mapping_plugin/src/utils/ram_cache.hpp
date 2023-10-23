@@ -134,7 +134,12 @@ namespace ram_cache
 
 
         std::shared_ptr<DataEntry> make_data_entry(DATA_BLOCK* data_block);
-        bool copy_from_cache(std::string key, DATA_BLOCK* data_block);
+        bool copy_from_cache(const std::string& key, DATA_BLOCK* data_block);
+        bool copy_data_from_cache(const std::string& key, DATA_BLOCK* data_block);
+        bool copy_error_high_from_cache(const std::string& key, DATA_BLOCK* data_block);
+        bool copy_time_from_cache(const std::string& key, DATA_BLOCK* data_block);
+        bool copy_dim_from_cache(const std::string& key, unsigned int i, DATA_BLOCK* data_block);
+
 
         private:
         uint32_t _max_items = default_size;

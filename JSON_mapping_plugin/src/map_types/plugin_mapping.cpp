@@ -72,6 +72,33 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     return request;
 }
 
+
+bool PluginMapping::copy_from_cache(const MapArguments& arguments, const std::string& request_str) const
+{
+    if (!m_cache_enabled) 
+    { 
+        return false;
+    }
+
+    auto signal_type = arguments.m_sig_type;
+    auto *data_block = arguments.m_interface->data_block;
+
+    switch(signal_type)
+    {
+        case SignalType::DATA:
+            return m_ram_cache->copy_data_from_cache(request_str, data_block);
+        case SignalType::ERROR:
+            return m_ram_cache->copy_error_high_from_cache(request_str, data_block);
+        case SignalType::TIME:
+            return m_ram_cache->copy_time_from_cache(request_str, data_block);
+        case SignalType::DIM:
+            return m_ram_cache->copy_dim_from_cache(request_str, 1, data_block);
+        default:
+            return m_ram_cache->copy_from_cache(request_str, data_block);
+    }
+}
+
+
 int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     int err{1};
@@ -126,7 +153,7 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     // check cache for request string and only get data if it's not already there
     // currently copies whole datablock (data, error, and dims)
     if (!m_cache_enabled) ram_cache::log(ram_cache::LogLevel::DEBUG,"caching disbaled");
-    bool cache_hit = m_cache_enabled and m_ram_cache->copy_from_cache(request_str, arguments.m_interface->data_block);
+    bool cache_hit = copy_from_cache(arguments, request_str);
     if (cache_hit)
     {
         ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
@@ -202,16 +229,13 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
         {
             err = JMP::map_transform::transform_offset(arguments.m_interface->data_block, m_offset.value());
         }
+        if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
+            // Opportunity to handle time differently
+            // Return time SignalType early, no need to scale/offset
+            err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
+            return err;
+        }
     }
-
-    if (m_plugin == "UDA" && arguments.m_sig_type == SignalType::TIME) {
-        // Opportunity to handle time differently
-        // Return time SignalType early, no need to scale/offset
-        err = imas_json_plugin::uda_helpers::setReturnTimeArray(arguments.m_interface->data_block);
-        return err;
-    }
-
-    
 
     return err;
 }

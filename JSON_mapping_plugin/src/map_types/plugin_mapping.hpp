@@ -40,5 +40,6 @@ class PluginMapping : public Mapping {
     bool m_cache_enabled;
 
     [[nodiscard]] std::string get_request_str(const MapArguments& arguments) const;
+    bool copy_from_cache(const MapArguments& arguments, const std::string& request_str) const;
     [[nodiscard]] int call_plugins(const MapArguments& arguments) const;
 };
