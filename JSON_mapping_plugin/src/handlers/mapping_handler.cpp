@@ -138,7 +138,7 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
         std::optional<float> opt_float{std::nullopt};
         if (value_local.contains(var_str) and !value_local[var_str].is_null()) {
-            if (value_local[var_str].is_number_float()) {
+            if (value_local[var_str].is_number()) {
                 opt_float = value_local[var_str].get<float>();
             } else if (value_local[var_str].is_string()) {
                 try {
