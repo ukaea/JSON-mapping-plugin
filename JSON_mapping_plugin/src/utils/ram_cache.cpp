@@ -10,16 +10,18 @@ namespace ram_cache
 {
     using uda_type_utils::size_of_uda_type;
 
-    std::shared_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block)
+    std::unique_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block)
     {
         log_datablock_status(data_block, "data_block before caching");
 
-        auto data_entry = std::make_shared<DataEntry>();
+        auto data_entry = std::make_unique<DataEntry>();
         size_t byte_length = data_block->data_n * size_of_uda_type(data_block->data_type);
+        data_entry->data.reserve(byte_length);
         std::copy(data_block->data, data_block->data + byte_length, std::back_inserter(data_entry->data));
+
+        data_entry->dims.reserve(data_block->rank);
         for (unsigned int i=0; i < data_block->rank; ++i)
         {   
-            std::vector<char> dim_vals;
             auto dim = data_block->dims[i];
 
             // expand any compressed dims for caching.
@@ -38,7 +40,7 @@ namespace ram_cache
             }
 
             size_t dim_byte_length = dim.dim_n * size_of_uda_type(dim.data_type);
-            std::copy(dim.dim, dim.dim + dim_byte_length, std::back_inserter(dim_vals));
+            std::vector<char> dim_vals(dim.dim, dim.dim + dim_byte_length);
             data_entry->dims.emplace_back(dim_vals);
             data_entry->dim_types.emplace_back(dim.data_type);
         }
@@ -48,12 +50,14 @@ namespace ram_cache
         if (data_block->errhi != nullptr and data_block->error_type > 0)
         {
             size_t errhi_bytes = data_block->data_n * size_of_uda_type(data_block->error_type);
+            data_entry->error_high.reserve(errhi_bytes);
             std::copy(data_block->errhi, data_block->errhi + errhi_bytes, std::back_inserter(data_entry->error_high));
             data_entry->error_type = data_block->error_type;
         }
         if (data_block->errlo != nullptr and data_block->error_type > 0)
         {
             size_t errlo_bytes = data_block->data_n * size_of_uda_type(data_block->error_type);
+            data_entry->error_low.reserve(errlo_bytes);
             std::copy(data_block->errlo, data_block->errlo + errlo_bytes, std::back_inserter(data_entry->error_high));
             data_entry->error_type = data_block->error_type;
         }
@@ -72,7 +76,7 @@ namespace ram_cache
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
         auto index = it - _keys.begin();
-        std::shared_ptr<DataEntry> data_entry = _values[index];
+        std::unique_ptr<DataEntry>& data_entry = _values[index];
 
         initDataBlock(data_block);
         data_block->data_type = data_entry->data_type;
@@ -119,7 +123,7 @@ namespace ram_cache
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
         auto index = it - _keys.begin();
-        std::shared_ptr<DataEntry> data_entry = _values[index];
+        std::unique_ptr<DataEntry>& data_entry = _values[index];
 
         if (data_entry->error_high.empty())
         {
@@ -171,7 +175,7 @@ namespace ram_cache
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
         auto index = it - _keys.begin();
-        std::shared_ptr<DataEntry> data_entry = _values[index];
+        std::unique_ptr<DataEntry>& data_entry = _values[index];
 
         if (data_entry->order == -1)
         {
@@ -222,7 +226,7 @@ namespace ram_cache
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
         auto index = it - _keys.begin();
-        std::shared_ptr<DataEntry> data_entry = _values[index];
+        std::unique_ptr<DataEntry>& data_entry = _values[index];
 
         if (i > data_entry->dims.size())
         {
@@ -274,7 +278,7 @@ namespace ram_cache
         log(LogLevel::INFO, "key found in ramcache: \"" + key + "\". copying data out");
 
         auto index = it - _keys.begin();
-        std::shared_ptr<DataEntry> data_entry = _values[index];
+        std::unique_ptr<DataEntry>& data_entry = _values[index];
 
         // DATA_BLOCK* data_block = (DATA_BLOCK*) malloc(sizeof(DATA_BLOCK));
         initDataBlock(data_block);
@@ -285,16 +289,16 @@ namespace ram_cache
 
         data_block->data = (char*) malloc(data_entry->data.size());
         std::copy(data_entry->data.data(), data_entry->data.data() + data_entry->data.size(), data_block->data);
-       if (!data_entry->error_high.empty())
-       {
-           data_block->errhi = (char*) malloc(data_entry->error_high.size());
-           std::copy(data_entry->error_high.data(), data_entry->error_high.data() + data_entry->error_high.size(), data_block->errhi);
-       }
-       if (!data_entry->error_low.empty())
-       {
-           data_block->errlo = (char*) malloc(data_entry->error_low.size());
-           std::copy(data_entry->error_low.data(), data_entry->error_low.data() + data_entry->error_low.size(), data_block->errlo);
-       }
+        if (!data_entry->error_high.empty())
+        {
+            data_block->errhi = (char*) malloc(data_entry->error_high.size());
+            std::copy(data_entry->error_high.data(), data_entry->error_high.data() + data_entry->error_high.size(), data_block->errhi);
+        }
+        if (!data_entry->error_low.empty())
+        {
+            data_block->errlo = (char*) malloc(data_entry->error_low.size());
+            std::copy(data_entry->error_low.data(), data_entry->error_low.data() + data_entry->error_low.size(), data_block->errlo);
+        }
         data_block->rank = data_entry->dims.size();
         log(LogLevel::INFO, "data rank is: " + std::to_string(data_block->rank));
 

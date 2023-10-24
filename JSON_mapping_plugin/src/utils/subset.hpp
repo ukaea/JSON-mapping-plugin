@@ -1,4 +1,5 @@
 #include <cstdint>
+#include <cstdlib>
 #include <plugins/pluginStructs.h>
 #include <server/getServerEnvironment.h>
 #include <vector>
@@ -6,6 +7,7 @@
 #include <chrono>
 #include <fstream>
 #include <iomanip>
+#include <string>
 #include <clientserver/parseXML.h>
 #include <clientserver/udaStructs.h>
 #include <utils/print_uda_structs.hpp>
@@ -95,6 +97,12 @@ namespace subset
 
 
     inline int log(LogLevel log_level, std::string_view log_msg) {
+
+        const char* log_env_option = getenv("UDA_JSON_MAPPING_SUBSET_LOGGING");
+        if (log_env_option == nullptr or std::stoi(log_env_option) <= 0)
+        {
+            return 0;
+        }
 
         const ENVIRONMENT* environment = getServerEnvironment();
 

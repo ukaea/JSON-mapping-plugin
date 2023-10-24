@@ -93,16 +93,18 @@ namespace ram_cache
         inline RamCache()
         {
             _values.reserve(_max_items);
+            set_logging_option();
         }
 
 
         explicit inline RamCache(uint32_t max_items) : _max_items(max_items) 
         {
             _values.reserve(_max_items);
+            set_logging_option();
         }
 
     
-        inline void add(std::string key, std::shared_ptr<DataEntry> value)
+        inline void add(std::string key, std::unique_ptr<DataEntry> value)
         {
             if (_values.size() < _max_items)
             {
@@ -123,7 +125,7 @@ namespace ram_cache
         inline void add(std::string key, DATA_BLOCK* data_block)
         {
             auto new_cache_entry = make_data_entry(data_block);
-            add(std::move(key), new_cache_entry);
+            add(std::move(key), std::move(new_cache_entry));
         }
 
 
@@ -133,19 +135,39 @@ namespace ram_cache
         }
 
 
-        std::shared_ptr<DataEntry> make_data_entry(DATA_BLOCK* data_block);
+        std::unique_ptr<DataEntry> make_data_entry(DATA_BLOCK* data_block);
         bool copy_from_cache(const std::string& key, DATA_BLOCK* data_block);
         bool copy_data_from_cache(const std::string& key, DATA_BLOCK* data_block);
         bool copy_error_high_from_cache(const std::string& key, DATA_BLOCK* data_block);
         bool copy_time_from_cache(const std::string& key, DATA_BLOCK* data_block);
         bool copy_dim_from_cache(const std::string& key, unsigned int i, DATA_BLOCK* data_block);
 
+        inline int log(LogLevel log_level, std::string_view message) const
+        {
+            if (!_logging_active) return 0;
+            return ram_cache::log(log_level, message);
+        }
+
+        inline void log_datablock_status(DATA_BLOCK* data_block, std::string message) const
+        {
+            if (!_logging_active) return;
+            ram_cache::log_datablock_status(data_block, message);
+        }
 
         private:
+        bool _logging_active = false;
         uint32_t _max_items = default_size;
         uint32_t _current_position = 0;
+        // change to unordered_map
         std::vector<std::string> _keys;
-        std::vector<std::shared_ptr<DataEntry>> _values;
+        std::vector<std::unique_ptr<DataEntry>> _values;
+
+
+        inline void set_logging_option()
+        {
+            const char* log_env_option = getenv("UDA_JSON_MAPPING_CACHE_LOGGING");
+            _logging_active = (log_env_option != nullptr) and (std::stoi(log_env_option) > 0);
+        }
     };
     
 }

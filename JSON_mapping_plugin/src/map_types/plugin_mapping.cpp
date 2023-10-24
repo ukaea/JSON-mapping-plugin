@@ -132,13 +132,13 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     if (request_str.back() == ']' and request_str.rfind('[')!=std::string::npos)
     {
         std::size_t subset_syntax_position = request_str.rfind('[');
-        ram_cache::log(ram_cache::LogLevel::INFO, "request before alteration: " + request_str);
+        m_ram_cache->log(ram_cache::LogLevel::INFO, "request before alteration: " + request_str);
         request_str.erase(subset_syntax_position);
-        ram_cache::log(ram_cache::LogLevel::INFO, "request after alteration: " + request_str);
+        m_ram_cache->log(ram_cache::LogLevel::INFO, "request after alteration: " + request_str);
     }
 
     std::string key_found = m_cache_enabled and m_ram_cache->has_entry(request_str) ? "True" : "False";
-    ram_cache::log(ram_cache::LogLevel::DEBUG, "key, \"" + request_str + "\" in cache? " + key_found);
+    m_ram_cache->log(ram_cache::LogLevel::DEBUG, "key, \"" + request_str + "\" in cache? " + key_found);
     
 
    /*
@@ -153,12 +153,12 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
 
     // check cache for request string and only get data if it's not already there
     // currently copies whole datablock (data, error, and dims)
-    if (!m_cache_enabled) ram_cache::log(ram_cache::LogLevel::DEBUG,"caching disbaled");
+    if (!m_cache_enabled) m_ram_cache->log(ram_cache::LogLevel::DEBUG,"caching disbaled");
     bool cache_hit = copy_from_cache(arguments, request_str);
     if (cache_hit)
     {
-        ram_cache::log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
-        ram_cache::log(ram_cache::LogLevel::INFO, "data on plugin_interface (data_n): " + std::to_string(arguments.m_interface->data_block->data_n));
+        m_ram_cache->log(ram_cache::LogLevel::INFO, "Adding cached datablock onto plugin_interface");
+        m_ram_cache->log(ram_cache::LogLevel::INFO, "data on plugin_interface (data_n): " + std::to_string(arguments.m_interface->data_block->data_n));
         err = 0;
     }
     else 
