@@ -94,7 +94,7 @@ set( BUILT_PLUGINS "${PLUGINS}" )
 # set( PLUGINS IMAS_JSON_MAP )
 message( STATUS "PLUGINS: ${PLUGINS}" )
 add_subdirectory( JSON_mapping_plugin )
-# add_subdirectory( DRaFT_data_reader )
+# add_subdirectory( DRAFT_data_reader )
 # add_subdirectory( temp_geom_plugin )
 
 #
