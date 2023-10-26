@@ -163,14 +163,27 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     }
     else 
     {
+        const auto* pluginlist = arguments.m_interface->pluginList;
+        if (m_plugin == "UDA")
+        {
+            // try to call directly if mast_signal plugin exists
+            int plugin_id = findPluginRequestByFormat("MAST_SIGNAL_PLUGIN", pluginlist);
+            if (plugin_id != REQUEST_READ_UNKNOWN) 
+            {
+                // ss << "MAST_SIGNAL_PLUGIN::get(signal=" << signal_str << ",shot=" << shot << ")";
+                request_str.replace(0,3, "MAST_SIGNAL_PLUGIN");
+            }
+        }
         err = callPlugin(arguments.m_interface->pluginList, request_str.c_str(), arguments.m_interface);
         subset::log_request_status(arguments.m_interface->request_data, "request block status:");
 
-        if (err) {
+        if (err != 0) {
             // add check of int udaNumErrors() and if more than one, don't wipe
             // 220 situation when UDA tries to get data and cannot find it
             if (err == 220)
+            {
                 closeUdaError();
+            }
             return err;
         } // return code if failure, no need to proceed
 
