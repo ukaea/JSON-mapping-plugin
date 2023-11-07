@@ -20,8 +20,7 @@ std::optional<MappingPair> MappingHandler::read_mappings(const MachineName_t& ma
     if (mappings.count(request_ids) == 0 || attributes.count(request_ids) == 0) {
         return {};
     }
-    // AJP :: Safety check if ids request not in mapping json (and typo
-    // obviously)
+    // AJP :: Safety check if ids request not in mapping json (and typo obviously)
     return std::optional<MappingPair>{
         std::make_pair(std::ref(attributes[request_ids]), std::ref(mappings[request_ids]))};
 }
@@ -36,7 +35,7 @@ std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDS
     if (ids_name.empty()) {
         return m_mapping_dir + "/" + machine + "/" + file_name;
     }
-    return m_mapping_dir + "/" + machine + "/mappings/" + ids_name + "/" + file_name;
+    return m_mapping_dir + "/" + machine + "/" + ids_name + "/" + file_name;
 }
 
 int MappingHandler::load_machine(const MachineName_t& machine) {
