@@ -92,7 +92,4 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     return err;
 }
 
-int PluginMapping::map(const MapArguments& arguments) const {
-
-    return call_plugins(arguments);
-}
+int PluginMapping::map(const MapArguments& arguments) const { return call_plugins(arguments); }
