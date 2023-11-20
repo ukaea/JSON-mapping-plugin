@@ -4,6 +4,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 #include "map_types/base_mapping.hpp"
 #include <nlohmann/json.hpp>
