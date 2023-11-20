@@ -27,7 +27,7 @@ using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 class MappingHandler {
 
   public:
-    MappingHandler() : m_init(false), m_dd_version("3.37"){};
+    MappingHandler() : m_init(false), m_dd_version("3.39.0"){};
     explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
 
     int reset() {
