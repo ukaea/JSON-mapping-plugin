@@ -196,7 +196,7 @@ int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* pl
         std::string const name = plugin_interface->request_data->nameValueList.nameValue[i].name;
         std::string const value = plugin_interface->request_data->nameValueList.nameValue[i].value;
 
-        if (name == "machine" || name == "path" || name == "rank" || name == "shape" || name == "datatype") {
+        if (name == "mapping" || name == "path" || name == "rank" || name == "shape" || name == "datatype") {
             continue;
         }
 
@@ -264,10 +264,10 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     data_block->rank = 0;
     data_block->dims = nullptr;
 
-    const char* machine = nullptr;
+    const char* mapping = nullptr;
     const char* path = nullptr;
 
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, machine)
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, mapping)
     FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, path)
 
     std::deque<std::string> path_tokens;
@@ -284,7 +284,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     std::string const ids_name{path_tokens.front()};
 
     // Use lowercase machine name for find mapping files
-    std::string machine_string = machine;
+    std::string machine_string = mapping;
     boost::to_lower(machine_string);
 
     // Load mappings based off IDS name
