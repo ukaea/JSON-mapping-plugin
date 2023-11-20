@@ -51,6 +51,7 @@ class MappingHandler {
     std::string mapping_path(const MachineName_t& machine, const IDSName_t& ids_name, const std::string& file_name);
     int init_mappings(const MachineName_t& machine, const IDSName_t& ids_name, const nlohmann::json& data);
     int load_machine(const MachineName_t& machine);
+    nlohmann::json load_toplevel(const MachineName_t& machine);
     int load_globals(const MachineName_t& machine, const IDSName_t& ids_name);
     int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 

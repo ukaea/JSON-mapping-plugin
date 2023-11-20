@@ -63,6 +63,30 @@ int MappingHandler::load_machine(const MachineName_t& machine) {
     return 0;
 }
 
+nlohmann::json MappingHandler::load_toplevel(const MachineName_t& machine) {
+
+    auto file_path = mapping_path(machine, "", "globals.json");
+
+    nlohmann::json toplevel_globals;
+
+    std::ifstream globals_file;
+    globals_file.open(file_path);
+    if (globals_file) {
+        try {
+            globals_file >> toplevel_globals;
+        } catch (nlohmann::json::exception& ex) {
+            std::string json_error{"MappingHandler::load_globals - "};
+            json_error.append(ex.what());
+            RAISE_PLUGIN_ERROR(json_error.c_str())
+        }
+
+    } else {
+        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open top-level globals file")
+    }
+    return toplevel_globals;
+
+}
+
 int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& ids_name) {
 
     auto file_path = mapping_path(machine, ids_name, "globals.json");
@@ -79,10 +103,11 @@ int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& 
             RAISE_PLUGIN_ERROR(json_error.c_str())
         }
 
+        temp_globals.update(load_toplevel(machine));
         m_machine_register[machine].attributes[ids_name] = temp_globals; // Record globals
 
     } else {
-        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open JSON globals file")
+        RAISE_PLUGIN_ERROR("MappingHandler::load_globals - Cannot open JSON globals file")
     }
     return 0;
 }
@@ -210,8 +235,6 @@ int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t&
             break;
         default:
             break;
-            // RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "
-            // "Unrecognised mapping type");
         }
     }
 
