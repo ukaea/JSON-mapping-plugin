@@ -125,7 +125,14 @@ namespace uda_structs
         ss <<  "data_label  : " << data_block->data_label << std::endl;
         ss <<  "data_desc   : " << data_block->data_desc << std::endl;
 
-        ss <<  "data        : " << print_uda_data_buffer(data_block->data,  data_block->data_type, data_block->data_n);
+        if (data_block->data_type != UDA_TYPE_CAPNP)
+        {
+            ss <<  "data        : " << print_uda_data_buffer(data_block->data,  data_block->data_type, data_block->data_n);
+        }
+        else 
+        {
+            ss << "data is capnp buffer" << std::endl;
+        }
         
         for(unsigned int i=0; i < data_block->rank; ++i)
         {

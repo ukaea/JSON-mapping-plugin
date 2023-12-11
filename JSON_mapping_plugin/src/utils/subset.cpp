@@ -104,12 +104,12 @@ namespace subset
         {
 
             // increment vector of current_indices (cascading when they roll-over)
-            for (unsigned int k=0; k<subset_dims.size() and current_indices[k] > subset_dims[k].stop(); ++k)
+            for (unsigned int k=0; k<subset_dims.size() and current_indices[k] >= subset_dims[k].stop(); ++k)
             {
                 current_indices[k] = subset_dims[k].start();
                 if (k < subset_dims.size() - 1)
                 {
-                    current_indices[k+1] += subset_dims[k].stride();
+                    current_indices[k+1] += subset_dims[k+1].stride();
                 }
                 else 
                 {
