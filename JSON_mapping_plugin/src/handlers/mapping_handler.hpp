@@ -5,6 +5,7 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
+#include <optional>
 
 #include "map_types/base_mapping.hpp"
 #include "utils/ram_cache.hpp"
@@ -29,7 +30,7 @@ using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 class MappingHandler {
 
   public:
-    MappingHandler() : m_init(false), m_dd_version("3.37"){};
+    MappingHandler() : m_init(false), m_dd_version("3.39.0"){};
     explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
 
     int reset() {
@@ -69,6 +70,7 @@ class MappingHandler {
     std::string mapping_path(const MachineName_t& machine, const IDSName_t& ids_name, const std::string& file_name);
     int init_mappings(const MachineName_t& machine, const IDSName_t& ids_name, const nlohmann::json& data);
     int load_machine(const MachineName_t& machine);
+    nlohmann::json load_toplevel(const MachineName_t& machine);
     int load_globals(const MachineName_t& machine, const IDSName_t& ids_name);
     int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 

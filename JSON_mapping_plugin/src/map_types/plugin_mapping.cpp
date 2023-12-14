@@ -56,12 +56,6 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
         }
         delim = ", ";
     }
-
-    for (const auto& flag : m_map_flags) {
-        string_stream << delim << flag;
-        delim = ", ";
-    }
-
     string_stream << ")";
 
     if (m_slice.has_value() && arguments.m_sig_type != SignalType::DIM) {

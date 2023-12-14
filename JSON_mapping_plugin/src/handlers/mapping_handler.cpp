@@ -20,8 +20,7 @@ std::optional<MappingPair> MappingHandler::read_mappings(const MachineName_t& ma
     if (mappings.count(request_ids) == 0 || attributes.count(request_ids) == 0) {
         return {};
     }
-    // AJP :: Safety check if ids request not in mapping json (and typo
-    // obviously)
+    // AJP :: Safety check if ids request not in mapping json (and typo obviously)
     return std::optional<MappingPair>{
         std::make_pair(std::ref(attributes[request_ids]), std::ref(mappings[request_ids]))};
 }
@@ -36,7 +35,7 @@ std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDS
     if (ids_name.empty()) {
         return m_mapping_dir + "/" + machine + "/" + file_name;
     }
-    return m_mapping_dir + "/" + machine + "/mappings/" + ids_name + "/" + file_name;
+    return m_mapping_dir + "/" + machine + "/" + ids_name + "/" + file_name;
 }
 
 int MappingHandler::load_machine(const MachineName_t& machine) {
@@ -64,6 +63,30 @@ int MappingHandler::load_machine(const MachineName_t& machine) {
     return 0;
 }
 
+nlohmann::json MappingHandler::load_toplevel(const MachineName_t& machine) {
+
+    auto file_path = mapping_path(machine, "", "globals.json");
+
+    nlohmann::json toplevel_globals;
+
+    std::ifstream globals_file;
+    globals_file.open(file_path);
+    if (globals_file) {
+        try {
+            globals_file >> toplevel_globals;
+        } catch (nlohmann::json::exception& ex) {
+            std::string json_error{"MappingHandler::load_globals - "};
+            json_error.append(ex.what());
+            RAISE_PLUGIN_ERROR(json_error.c_str())
+        }
+
+    } else {
+        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open top-level globals file")
+    }
+    return toplevel_globals;
+
+}
+
 int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& ids_name) {
 
     auto file_path = mapping_path(machine, ids_name, "globals.json");
@@ -80,10 +103,11 @@ int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& 
             RAISE_PLUGIN_ERROR(json_error.c_str())
         }
 
+        temp_globals.update(load_toplevel(machine));
         m_machine_register[machine].attributes[ids_name] = temp_globals; // Record globals
 
     } else {
-        RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open JSON globals file")
+        RAISE_PLUGIN_ERROR("MappingHandler::load_globals - Cannot open JSON globals file")
     }
     return 0;
 }
@@ -138,7 +162,7 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
         std::optional<float> opt_float{std::nullopt};
         if (value_local.contains(var_str) and !value_local[var_str].is_null()) {
-            if (value_local[var_str].is_number_float()) {
+            if (value_local[var_str].is_number()) {
                 opt_float = value_local[var_str].get<float>();
             } else if (value_local[var_str].is_string()) {
                 try {
@@ -156,7 +180,6 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     boost::to_upper(plugin_name);
 
     auto args = value["ARGS"].get<MapArgs_t>();
-    auto flags = value.contains("FLAGS") ? value["FLAGS"].get<MapFlags_t>() : std::vector<std::string>();
 
     if (ids_attributes.count("PLUGIN_ARGS") != 0) {
         add_plugin_args(args, ids_attributes, plugin_name);
@@ -168,7 +191,7 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
                                          : std::optional<std::string>{};
     auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
                                                : std::optional<std::string>{};
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, flags, offset, scale, slice, function, ram_cache));
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function, ram_cache));
     return 0;
 }
 
@@ -212,8 +235,6 @@ int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t&
             break;
         default:
             break;
-            // RAISE_PLUGIN_ERROR("ImasMastuPlugin::init_mappings(...) "
-            // "Unrecognised mapping type");
         }
     }
 
