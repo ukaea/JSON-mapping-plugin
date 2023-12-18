@@ -1,6 +1,6 @@
 #include "ram_cache.hpp"
 #include "clientserver/initStructs.h"
-#include "temp_geom_plugin/utils/uda_plugin_helpers.hpp"
+#include "utils/uda_plugin_helpers.hpp"
 #include <clientserver/udaTypes.h>
 #include <iterator>
 #include <stdexcept>

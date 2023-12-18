@@ -16,7 +16,6 @@ class PluginMapping : public Mapping {
                   std::shared_ptr<ram_cache::RamCache> ram_cache)
         : m_plugin{std::move(plugin)}, 
           m_map_args{std::move(request_args)}, 
-          m_map_flags{std::move(request_flags)},
           m_offset{offset}, 
           m_scale{scale}, 
           m_slice{std::move(slice)}, 
