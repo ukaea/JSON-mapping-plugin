@@ -11,18 +11,12 @@ using MapArgs_t = std::unordered_map<std::string, nlohmann::json>;
 class PluginMapping : public Mapping {
   public:
     PluginMapping() = delete;
-    PluginMapping(std::string plugin, MapArgs_t request_args, std::optional<float> offset,
-                  std::optional<float> scale, std::optional<std::string> slice, std::optional<std::string> function,
+    PluginMapping(std::string plugin, MapArgs_t request_args, std::optional<float> offset, std::optional<float> scale,
+                  std::optional<std::string> slice, std::optional<std::string> function,
                   std::shared_ptr<ram_cache::RamCache> ram_cache)
-        : m_plugin{std::move(plugin)}, 
-          m_map_args{std::move(request_args)}, 
-          m_offset{offset}, 
-          m_scale{scale}, 
-          m_slice{std::move(slice)}, 
-          m_function{std::move(function)}, 
-          m_ram_cache{std::move(ram_cache)},
-          m_cache_enabled(m_ram_cache!=nullptr)
-    {};
+        : m_plugin{std::move(plugin)}, m_map_args{std::move(request_args)}, m_offset{offset}, m_scale{scale},
+          m_slice{std::move(slice)}, m_function{std::move(function)}, m_ram_cache{std::move(ram_cache)},
+          m_cache_enabled(m_ram_cache != nullptr){};
 
     [[nodiscard]] int map(const MapArguments& arguments) const override;
 

@@ -84,7 +84,6 @@ nlohmann::json MappingHandler::load_toplevel(const MachineName_t& machine) {
         RAISE_PLUGIN_ERROR("MappingHandler::load_globals- Cannot open top-level globals file")
     }
     return toplevel_globals;
-
 }
 
 int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& ids_name) {
@@ -191,7 +190,8 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
                                          : std::optional<std::string>{};
     auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
                                                : std::optional<std::string>{};
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function, ram_cache));
+    map_reg.try_emplace(key,
+                        std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function, ram_cache));
     return 0;
 }
 

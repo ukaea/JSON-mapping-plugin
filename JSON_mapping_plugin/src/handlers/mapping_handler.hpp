@@ -3,9 +3,9 @@
 #include <cstdlib>
 #include <fstream>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <optional>
 
 #include "map_types/base_mapping.hpp"
 #include "utils/ram_cache.hpp"
@@ -49,13 +49,10 @@ class MappingHandler {
 
         bool enable_caching = (enable_caching_str == nullptr) or (std::stoi(enable_caching_str) > 0);
 
-        if (enable_caching)
-        {
+        if (enable_caching) {
             size_t cache_size = (cache_size_str != nullptr) ? std::stoi(cache_size_str) : ram_cache::default_size;
             m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
-        }
-        else 
-        {
+        } else {
             m_ram_cache = nullptr;
         }
         m_cache_enabled = m_ram_cache != nullptr;
