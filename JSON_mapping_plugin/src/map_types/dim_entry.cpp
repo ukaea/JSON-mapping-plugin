@@ -7,12 +7,12 @@ int DimEntry::map(
     const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
     const nlohmann::json& json_globals) const {
 
-    if (!entries.count(m_dim_probe)) {
+    if (!entries.count(_dim_probe)) {
         return 1;
     }
     // 0 if both successful
-    int err = entries.at(m_dim_probe)->set_sig_type(SignalType::DIM) or
-              entries.at(m_dim_probe)->map(interface, entries, json_globals);
+    int err = entries.at(_dim_probe)->set_sig_type(SignalType::DIM) or
+              entries.at(_dim_probe)->map(interface, entries, json_globals);
     if (!err) {
         free((void*)interface->data_block->data); // fix
         interface->data_block->data = nullptr;

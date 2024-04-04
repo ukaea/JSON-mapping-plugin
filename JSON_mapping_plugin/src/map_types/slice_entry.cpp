@@ -10,10 +10,10 @@ int SliceEntry::map(
     const nlohmann::json& json_globals) const {
 
     int err{1};
-    if (!entries.at(m_slice_key)
+    if (!entries.at(_slice_key)
              ->set_current_request_data(
                  &interface->request_data->nameValueList) &&
-        !entries.at(m_slice_key)->map(interface, entries, json_globals)) {
+        !entries.at(_slice_key)->map(interface, entries, json_globals)) {
         err = map_slice(interface->data_block, json_globals);
     }
     return err;
@@ -27,7 +27,7 @@ int SliceEntry::map_slice(DataBlock* data_block,
 
     // convert str_indices to int and complete template
     std::vector<int> int_indices;
-    std::transform(m_slice_indices.begin(), m_slice_indices.end(),
+    std::transform(_slice_indices.begin(), _slice_indices.end(),
                    std::back_inserter(int_indices), [&](std::string str) {
                        str = inja::render(str, json_globals);
                        return stoi(str);

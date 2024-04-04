@@ -41,7 +41,7 @@ int setReturnDataScalarType(DATA_BLOCK* data_block, T value,
     data_block->data_n = 1;
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values,
@@ -86,7 +86,7 @@ int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values,
     data_block->data_n = (int)len; // Not ideal....
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataArrayType_Vec(DATA_BLOCK* data_block,
@@ -124,7 +124,7 @@ int setReturnDataArrayType_Vec(DATA_BLOCK* data_block,
     data_block->data_n = (int)vec_size;
 
     return 0;
-};
+}
 
 template <typename T>
 int setReturnDataValArray(DATA_BLOCK* data_block,
@@ -164,4 +164,4 @@ int setReturnDataValArray(DATA_BLOCK* data_block,
     return 0;
 }
 
-}; // namespace imas_json_plugin::uda_helpers
+} // namespace imas_json_plugin::uda_helpers

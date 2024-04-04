@@ -47,11 +47,11 @@ int Mapping::set_current_request_data_map(
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
-    m_request_data.host = "uda2.hpc.l";
-    m_request_data.port = 56565;
-    m_request_data.shot = std::stoi(nvlist.at("shot")); // ask forgiveness
-    m_request_data.indices = vec_indices;
-    m_request_data.sig_type = SignalType::DEFAULT;
+    _request_data.host = "uda2.hpc.l";
+    _request_data.port = 56565;
+    _request_data.shot = std::stoi(nvlist.at("shot")); // ask forgiveness
+    _request_data.indices = vec_indices;
+    _request_data.sig_type = SignalType::DEFAULT;
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
@@ -91,11 +91,11 @@ int Mapping::set_current_request_data(NAMEVALUELIST* nvlist) {
 
     // Set request info
     // Replace hardcoded values after IMAS-plugin request change
-    m_request_data.host = "uda2.hpc.l";
-    m_request_data.port = 56565;
-    m_request_data.shot = shot;
-    m_request_data.indices = vec_indices;
-    m_request_data.sig_type = SignalType::DEFAULT;
+    _request_data.host = "uda2.hpc.l";
+    _request_data.port = 56565;
+    _request_data.shot = shot;
+    _request_data.indices = vec_indices;
+    _request_data.sig_type = SignalType::DEFAULT;
     //////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////
 
@@ -116,7 +116,7 @@ int ValueEntry::map(
     const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
     const nlohmann::json& global_data) const {
 
-    const auto temp_val = m_value;
+    const auto temp_val = _value;
     if (temp_val.is_discarded() or temp_val.is_binary() or temp_val.is_null()) {
         UDA_LOG(UDA_LOG_DEBUG, "ValueEntry::map unrecognised json value type");
         return 1;

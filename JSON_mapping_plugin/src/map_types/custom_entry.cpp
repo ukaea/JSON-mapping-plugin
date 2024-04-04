@@ -18,7 +18,7 @@ int CustomEntry::map(
     const nlohmann::json& global_data) const {
 
     int err{1};
-    switch (m_custom_type) {
+    switch (_custom_type) {
     case CustomMapType_t::MASTU_helloworld:
         err = MASTU_helloworld(interface->data_block);
         break;

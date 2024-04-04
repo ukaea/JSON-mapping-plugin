@@ -4,8 +4,8 @@ class SliceEntry : public Mapping {
   public:
     SliceEntry() = delete;
     SliceEntry(std::vector<std::string> slice_indices, std::string slice_key)
-        : m_slice_indices(std::move(slice_indices)),
-          m_slice_key(std::move(slice_key)) {}
+        : _slice_indices(std::move(slice_indices)),
+          _slice_key(std::move(slice_key)) {}
 
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
@@ -13,8 +13,8 @@ class SliceEntry : public Mapping {
             const nlohmann::json& json_globals) const override;
 
   private:
-    std::vector<std::string> m_slice_indices;
-    std::string m_slice_key;
+    std::vector<std::string> _slice_indices;
+    std::string _slice_key;
 
     int map_slice(DataBlock* data_block, const nlohmann::json& json_globals)
         const; // const for some reason
