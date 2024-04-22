@@ -3,6 +3,7 @@
 #include "map_types/base_mapping.hpp"
 
 #include <boost/algorithm/string.hpp>
+#include <boost/regex.hpp>
 #include <fstream>
 
 #include <clientserver/initStructs.h>
@@ -93,8 +94,10 @@ class JSONMappingPlugin {
     static std::pair<std::vector<int>, std::deque<std::string>>
     extract_indices(const std::deque<std::string>& path_tokens);
     static int add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface, nlohmann::json& attributes);
-    static std::string generate_map_path(std::deque<std::string>& path_tokens, IDSMapRegister_t& mappings);
+    static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices, IDSMapRegister_t& mappings, const std::string& full_path);
 };
+
+static boost::regex PATH_INDEX_RE{R"(\[\d\])"};
 
 std::pair<std::vector<int>, std::deque<std::string>>
 JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
@@ -102,16 +105,16 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
     std::deque<std::string> processed_tokens;
 
     for (const auto& token : path_tokens) {
-        size_t const pos = token.find('[');
-        if (pos != std::string::npos) {
-            auto sub_string = token.substr(pos + 1);
-            int const index = std::stoi(sub_string);
-            auto new_token = token.substr(0, pos) + "[#]";
-            indices.push_back(index);
-            processed_tokens.push_back(new_token);
-        } else {
-            processed_tokens.push_back(token);
+
+        boost::sregex_token_iterator iter(token.begin(), token.end(), PATH_INDEX_RE, 0);
+        boost::sregex_token_iterator end;
+        for (; iter != end; ++iter) {
+            std::string num = &*(iter->begin() + 1);
+            indices.push_back(std::stoi(num));
         }
+
+        std::string new_token = boost::regex_replace(token, PATH_INDEX_RE, "[#]");
+        processed_tokens.push_back(new_token);
     }
 
     return {indices, processed_tokens};
@@ -172,18 +175,18 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) {
  * @return SignalType Enum class containing the current signal type
  * [DEFAULT, INVALID, DATA, TIME, ERROR]
  */
-SignalType JSONMappingPlugin::deduce_signal_type(std::string_view element_back_str) {
+SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_element) {
 
     // SignalType useful in determining for MAST-U
     SignalType sig_type{SignalType::DEFAULT};
-    if (element_back_str.empty()) {
-        UDA_LOG(UDA_LOG_DEBUG, "\nImasMastuPlugin::sig_type_check - Empty element suffix\n");
+    if (final_path_element.empty()) {
+        UDA_LOG(UDA_LOG_DEBUG, "Empty element suffix\n");
         sig_type = SignalType::INVALID;
-    } else if (element_back_str == "data") {
+    } else if (final_path_element == "data") {
         sig_type = SignalType::DATA;
-    } else if (element_back_str == "time") {
+    } else if (final_path_element == "time") {
         sig_type = SignalType::TIME;
-    } else if (element_back_str.find("error") != std::string::npos) {
+    } else if (final_path_element.find("error") != std::string::npos) {
         sig_type = SignalType::ERROR;
     }
     return sig_type;
@@ -208,31 +211,54 @@ int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* pl
     return 0;
 }
 
-std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, IDSMapRegister_t& mappings) {
-    std::string map_path = boost::algorithm::join(path_tokens, "/");
-    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
+std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, const std::vector<int>& indices, const std::string& full_path) {
+    // If mapping is found we are good
+    if (mappings.count(path) > 0) {
+        return path;
+    }
 
-    // Deduce signal_type
+    // Check with the path without generalisation
+    if (mappings.count(full_path) > 0) {
+        return full_path;
+    }
+
+    // If there's nothing to replace then no mapping can be found
+    if (indices.empty()) {
+        return "";
+    }
+
+    // Check for last # replaced with index
+    std::string new_path = boost::replace_last_copy(path, "#", std::to_string(indices.back()));
+    if (mappings.count(new_path) > 0) {
+        return new_path;
+    }
+
+    // No mappings found
+    return "";
+}
+
+std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices, IDSMapRegister_t& mappings, const std::string& full_path) {
     const auto sig_type = deduce_signal_type(path_tokens.back());
     if (sig_type == SignalType::INVALID) {
         return {}; // Don't throw, go gentle into that good night
     }
 
+    std::string map_path = boost::algorithm::join(path_tokens, "/");
+    JSONMapping::JPLog(JSONMapping::JPLogLevel::INFO, map_path);
+
+    std::string found_path;
+
     if (mappings.count(map_path) == 0) {
-        JSONMapping::JPLog(JSONMapping::JPLogLevel::WARNING, "JSONMappingPlugin::get: - "
-                                                             "IDS path not found in JSON mapping file");
         if (sig_type == SignalType::TIME or sig_type == SignalType::DATA) {
             path_tokens.pop_back();
             map_path = boost::algorithm::join(path_tokens, "/");
-            if (mappings.count(map_path) == 0) {
-                return {};
-            }
-        } else {
-            return {};
         }
+        found_path = find_mapping(mappings, map_path, indices, full_path);
+    } else {
+        found_path = map_path;
     }
 
-    return map_path;
+    return found_path;
 }
 
 /**
@@ -301,7 +327,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     path_tokens.pop_front();
 
     const auto sig_type = deduce_signal_type(path_tokens.back());
-    std::string const map_path = generate_map_path(path_tokens, mappings);
+    std::string const map_path = generate_map_path(path_tokens, indices, mappings, path);
     if (map_path.empty()) {
         return 1; // No mapping found, don't throw
     }
