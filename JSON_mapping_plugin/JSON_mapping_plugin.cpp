@@ -97,7 +97,7 @@ class JSONMappingPlugin {
     static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices, IDSMapRegister_t& mappings, const std::string& full_path);
 };
 
-static boost::regex PATH_INDEX_RE{R"(\[\d\])"};
+static boost::regex PATH_INDEX_RE{R"(\[\d+\])"};
 
 std::pair<std::vector<int>, std::deque<std::string>>
 JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
