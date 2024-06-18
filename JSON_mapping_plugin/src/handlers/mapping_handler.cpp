@@ -134,80 +134,87 @@ int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t&
     return 0;
 }
 
-int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
-    auto v = value.at("VALUE");
-    auto x = new ValueMapping{v};
-    map_reg.try_emplace(key, std::unique_ptr<ValueMapping>{x});
+int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value) {
+    const auto& value_json = value.at("VALUE");
+    map_reg.try_emplace(key, std::make_unique<ValueMapping>(value_json));
     return 0;
 }
 
-void add_plugin_args(std::unordered_map<std::string, nlohmann::json>& args, nlohmann::json ids_attributes,
-                     const std::string& plugin_name) {
-    const auto& plugin_args_map = ids_attributes["PLUGIN_ARGS"].get<nlohmann::json>();
-    if (plugin_args_map.count(plugin_name) != 0) {
-        const auto& plugin_args = plugin_args_map.at(plugin_name).get<nlohmann::json>();
+namespace {
+
+void apply_config(std::unordered_map<std::string, nlohmann::json>& args, std::optional<std::string>& function,
+                  nlohmann::json plugin_config_map, const std::string& plugin_name) {
+    if (plugin_config_map.contains(plugin_name)) {
+        const auto& plugin_config = plugin_config_map[plugin_name].get<nlohmann::json>();
+        const auto& plugin_args = plugin_config["ARGS"].get<nlohmann::json>();
         for (const auto& [name, arg] : plugin_args.items()) {
             if (args.count(name) == 0) {
                 // don't overwrite mapping arguments with global values
                 args[name] = arg;
             }
         }
+        if (plugin_config.contains("FUNCTION") && !function) {
+            function = plugin_config["FUNCTION"].get<std::string>();
+        }
     }
 }
 
-int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value,
-                                        nlohmann::json ids_attributes, std::shared_ptr<ram_cache::RamCache> ram_cache) {
-    // Structured bindings lambda capture bug, json passed as argument
-    auto get_offset_scale = [&](const std::string& var_str, nlohmann::json value_local) {
-        std::optional<float> opt_float{std::nullopt};
-        if (value_local.contains(var_str) and !value_local[var_str].is_null()) {
-            if (value_local[var_str].is_number()) {
-                opt_float = value_local[var_str].get<float>();
-            } else if (value_local[var_str].is_string()) {
-                try {
-                    const auto post_inja_str = inja::render(value_local[var_str].get<std::string>(), ids_attributes);
-                    opt_float = std::stof(post_inja_str);
-                } catch (const std::invalid_argument& e) {
-                    UDA_LOG(UDA_LOG_DEBUG, "\nCannot convert OFFSET/SCALE string to float\n");
-                }
+std::optional<float> get_float_value(const std::string& name, const nlohmann::json& value,
+                                     const nlohmann::json& ids_attributes) {
+    std::optional<float> opt_float{std::nullopt};
+    if (value.contains(name) and !value[name].is_null()) {
+        if (value[name].is_number()) {
+            opt_float = value[name].get<float>();
+        } else if (value[name].is_string()) {
+            try {
+                const auto post_inja_str = inja::render(value[name].get<std::string>(), ids_attributes);
+                opt_float = std::stof(post_inja_str);
+            } catch (const std::invalid_argument& e) {
+                std::string message = "\nCannot convert " + name + " string to float\n";
+                UDA_LOG(UDA_LOG_DEBUG, "%s", message.c_str());
             }
         }
-        return opt_float;
-    };
+    }
+    return opt_float;
+}
 
+} // anon namespace
+
+int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value,
+                                        const nlohmann::json& ids_attributes) {
     auto plugin_name = value["PLUGIN"].get<std::string>();
     boost::to_upper(plugin_name);
 
     auto args = value["ARGS"].get<MapArgs_t>();
-
-    if (ids_attributes.count("PLUGIN_ARGS") != 0) {
-        add_plugin_args(args, ids_attributes, plugin_name);
-    }
-
-    auto offset = get_offset_scale("OFFSET", value);
-    auto scale = get_offset_scale("SCALE", value);
+    auto offset = get_float_value("OFFSET", value, ids_attributes);
+    auto scale = get_float_value("SCALE", value, ids_attributes);
     auto slice = value.contains("SLICE") ? std::optional<std::string>{value["SLICE"].get<std::string>()}
                                          : std::optional<std::string>{};
     auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
                                                : std::optional<std::string>{};
-    map_reg.try_emplace(key,
-                        std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function, ram_cache));
+  
+    if (ids_attributes.contains("PLUGIN_CONFIG")) {
+        const auto& plugin_config_map = ids_attributes["PLUGIN_CONFIG"].get<nlohmann::json>();
+        apply_config(args, function, plugin_config_map, plugin_name);
+    }
+
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function));
     return 0;
 }
 
-int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value) {
     map_reg.try_emplace(key, std::make_unique<DimMapping>(value["DIM_PROBE"].get<std::string>()));
     return 0;
 }
 
-int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value) {
     map_reg.try_emplace(
         key, std::make_unique<ExprMapping>(value["EXPR"].get<std::string>(),
                                            value["PARAMETERS"].get<std::unordered_map<std::string, std::string>>()));
     return 0;
 }
 
-int MappingHandler::init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, nlohmann::json value) {
+int MappingHandler::init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value) {
     map_reg.try_emplace(key, std::make_unique<CustomMapping>(value["CUSTOM_TYPE"].get<CustomMapType_t>()));
     return 0;
 }
