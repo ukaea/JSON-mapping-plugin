@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdlib>
-#include <fstream>
 #include <memory>
 #include <optional>
 #include <string>
@@ -72,7 +71,7 @@ class MappingHandler {
     int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 
     static int init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
-    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value, const nlohmann::json& ids_attributes);
+    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value, const nlohmann::json& ids_attributes, std::shared_ptr<ram_cache::RamCache>& ram_cache);
     static int init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);

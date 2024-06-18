@@ -25,7 +25,13 @@ class SubsetInfo {
     inline explicit SubsetInfo(uint64_t size) : _start(0), _stop(size), _dim_size(size) {}
 
     inline SubsetInfo(uint64_t start, uint64_t stop, int stride, uint64_t size)
-        : _start(start), _stop(stop), _stride(stride), _dim_size(size) {}
+        : _start(start), _stop(stop), _stride(stride), _dim_size(size) {
+ 
+            if (start == 0 and stop == 0)
+            {
+                _stop = size;
+            };
+    }
 
     [[nodiscard]] inline uint64_t size() const { return std::floor((_stop - _start) / _stride); }
 
