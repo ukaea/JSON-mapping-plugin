@@ -1,4 +1,9 @@
-# Needed to runtime find the installed mappings locations on the server side machine
+# Needed at runtime to find the installed mappings locations on the server side machine
 # Environmental Variables are available on server after install
 
 export UDA_JSON_MAPPING_DIR=@CMAKE_INSTALL_PREFIX@/etc/JSON_mappings
+export UDA_JSON_MAPPING_SUBSET_METHOD=PLUGIN_SUBSET # SERVER_SUBSET(default) or PLUGIN_SUBSET
+export UDA_JSON_MAPPING_CACHE_SIZE=100 # default is 100
+export UDA_JSON_MAPPING_USE_CACHE=1 # 1=ON(default) 0=OFF
+export UDA_JSON_MAPPING_SUBSET_LOGGING=1 # 0=OFF(default) 1=ON
+export UDA_JSON_MAPPING_CACHE_LOGGING=1 # 0=OFF(default) 1=ON

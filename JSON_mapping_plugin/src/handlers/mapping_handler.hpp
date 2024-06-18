@@ -1,12 +1,13 @@
 #pragma once
 
-#include <fstream>
+#include <cstdlib>
 #include <memory>
+#include <optional>
 #include <string>
 #include <unordered_map>
-#include <optional>
 
 #include "map_types/base_mapping.hpp"
+#include "utils/ram_cache.hpp"
 #include <nlohmann/json.hpp>
 
 using IDSName_t = std::string;
@@ -42,6 +43,19 @@ class MappingHandler {
             return 0;
         }
 
+        char* cache_size_str = getenv("UDA_JSON_MAPPING_CACHE_SIZE");
+        char* enable_caching_str = getenv("UDA_JSON_MAPPING_USE_CACHE");
+
+        bool enable_caching = (enable_caching_str == nullptr) or (std::stoi(enable_caching_str) > 0);
+
+        if (enable_caching) {
+            size_t cache_size = (cache_size_str != nullptr) ? std::stoi(cache_size_str) : ram_cache::default_size;
+            m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
+        } else {
+            m_ram_cache = nullptr;
+        }
+        m_cache_enabled = m_ram_cache != nullptr;
+
         m_init = true;
         return 0;
     };
@@ -57,7 +71,7 @@ class MappingHandler {
     int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 
     static int init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
-    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value, const nlohmann::json& ids_attributes);
+    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value, const nlohmann::json& ids_attributes, std::shared_ptr<ram_cache::RamCache>& ram_cache);
     static int init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
@@ -69,4 +83,6 @@ class MappingHandler {
     std::string m_dd_version;
     std::string m_mapping_dir;
     nlohmann::json m_mapping_config;
+    std::shared_ptr<ram_cache::RamCache> m_ram_cache;
+    bool m_cache_enabled;
 };
