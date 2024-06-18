@@ -7,6 +7,43 @@
 
 namespace subset {
 
+    void freeDimBlockContents(DATA_BLOCK* data_block, unsigned int idx)
+    {
+        if (idx >= data_block-> rank)
+        {
+            return;
+        }
+
+        auto* ddims = data_block->dims;
+        void* cptr = nullptr;
+        if ((cptr = (void*)ddims[idx].dim) != nullptr) free(cptr);
+        if ((cptr = (void*)ddims[idx].errhi) != nullptr) free(cptr);
+        if ((cptr = (void*)ddims[idx].errlo) != nullptr) free(cptr);
+        if ((cptr = (void*)ddims[idx].sams) != nullptr) free(cptr);
+        if ((cptr = (void*)ddims[idx].offs) != nullptr) free(cptr);
+        if ((cptr = (void*)ddims[idx].ints) != nullptr) free(cptr);
+
+        data_block->dims[idx].dim = nullptr;
+        data_block->dims[idx].errhi = nullptr;
+        data_block->dims[idx].errlo = nullptr;
+        data_block->dims[idx].sams = nullptr;
+        data_block->dims[idx].offs = nullptr;
+        data_block->dims[idx].ints = nullptr;
+    }
+
+    void freeDimArray(DATA_BLOCK* data_block)
+    {
+        for (unsigned int i=0; i<data_block->rank; i++) 
+        {
+            freeDimBlockContents(data_block,i);
+        }
+
+        free((void*)data_block->dims);
+        data_block->dims = nullptr;
+        data_block->rank = 0;
+        data_block->order = -1;
+    }
+
 /*
  * comvert SUBSET block from the request_block on the plugin_interface structure
  * into a vector of SubsetInfo classes for use with the current implementation of
@@ -139,7 +176,72 @@ template <typename T> void do_a_subset(IDAM_PLUGIN_INTERFACE* plugin_interface, 
         // TODO: think about dim scaling...
         apply_dim_subsetting(&data_block->dims[i], subset_dims[i], 1.0, 0.0);
     }
+    collapse_dims(data_block, subset_dims);
 }
+
+    void collapse_dims(DATA_BLOCK* data_block, std::vector<SubsetInfo>& subset_dims)
+    {
+        log(LogLevel::DEBUG, "running collapse dims routine");
+        auto* dims = data_block->dims;
+        unsigned int n_dims = data_block->rank;
+        log(LogLevel::DEBUG, "old dims number: " + std::to_string(n_dims));
+        log(LogLevel::DEBUG, "old time dimension: " + std::to_string(data_block->order));
+        for (const auto& subset_info: subset_dims)
+        {
+            if (subset_info.size() == 1)
+            {
+                n_dims--;
+            }
+        }
+        log(LogLevel::DEBUG, "new dims number: " + std::to_string(n_dims));
+        if (n_dims == data_block->rank)
+        {
+            log(LogLevel::DEBUG, "no dims to collapse");
+        }
+        else if (n_dims > 0)
+        {
+            log(LogLevel::DEBUG, "reallocating dims array");
+            DIMS* new_dims = (DIMS*) malloc(n_dims * sizeof(DIMS));
+            for (auto i=0, j=0; i<n_dims, j<data_block->rank; ++j)
+            {
+
+                if (subset_dims[j].size() == 1)
+                {
+                    log(LogLevel::DEBUG, "removing dim #" + std::to_string(j));
+                    freeDimBlockContents(data_block, j);
+                    if (data_block-> order == j)
+                    {
+                        data_block->order = -1;
+                    }
+                    continue;
+                }
+                if (data_block->order == j)
+                {
+                    data_block-> order = i;
+                }
+                log(LogLevel::DEBUG, "old dim #" + std::to_string(j) + " is now new dim #" + std::to_string(i));
+                new_dims[i++] = dims[j];
+            }
+            // all pointers contained in old dim struct passed to new dim struct (if retained) 
+            // so don't free individual data fields here. only want to free old dims array.
+            log(LogLevel::DEBUG, "freeing old dim array");
+            free((void*)dims);
+            log(LogLevel::DEBUG, "no seg-fault :)");
+
+            data_block-> dims = new_dims;
+            data_block->rank = n_dims;
+        }
+        else
+        {
+            log(LogLevel::DEBUG, "freeing old dim array");
+            freeDimArray(data_block);
+            log(LogLevel::DEBUG, "no seg-fault :)");
+            data_block->order = 0;
+            data_block->order = -1;
+        }
+        log(LogLevel::DEBUG, "new time dimension: " + std::to_string(data_block->order));
+        log(LogLevel::DEBUG, "new rank: " + std::to_string(data_block->rank));
+    }
 
 template <typename T> void do_dim_subset(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset) {
     log(LogLevel::DEBUG, "Entering do_dim_subset method");

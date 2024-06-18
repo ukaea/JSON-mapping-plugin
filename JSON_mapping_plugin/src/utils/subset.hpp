@@ -69,6 +69,9 @@ template <typename T>
 std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dims, double scale_factor = 1.0,
                       double offset = 0.0);
 
+void collapse_dims(DATA_BLOCK* data_block, std::vector<SubsetInfo>& subset_dims);
+
+
 enum class LogLevel { DEBUG, INFO, WARNING, ERROR };
 
 inline int log(LogLevel log_level, std::string_view log_msg) {
