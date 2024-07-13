@@ -3,8 +3,8 @@
 #include "map_types/base_mapping.hpp"
 
 #include <boost/algorithm/string.hpp>
-#include <boost/regex.hpp>
 #include <fstream>
+#include <regex>
 
 #include <clientserver/initStructs.h>
 #include <clientserver/stringUtils.h>
@@ -102,7 +102,7 @@ class JSONMappingPlugin
     // Loads, controls, stores mapping file lifetime
     MappingHandler m_mapping_handler;
     bool m_init = false;
-    std::string m_function_name;
+    std::string m_request_function;
 };
 
 std::pair<std::vector<int>, std::deque<std::string>>
@@ -110,18 +110,17 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
 {
     std::vector<int> indices;
     std::deque<std::string> processed_tokens;
-    static boost::regex PATH_INDEX_RE{R"(\[\d+\])"};
+    static std::regex PATH_INDEX_RE{R"(\[\d+\])"};
 
     for (const auto& token : path_tokens) {
+        std::sregex_token_iterator iter{ token.begin(), token.end(), PATH_INDEX_RE, 0 };
+        std::sregex_token_iterator end;
 
-        boost::sregex_token_iterator iter(token.begin(), token.end(), PATH_INDEX_RE, 0);
-        boost::sregex_token_iterator end;
         for (; iter != end; ++iter) {
-            std::string num = &*(iter->begin() + 1);
+            std::string num = iter->str().substr(1);
             indices.push_back(std::stoi(num));
         }
-
-        std::string new_token = boost::regex_replace(token, PATH_INDEX_RE, "[#]");
+        std::string new_token = std::regex_replace(token, PATH_INDEX_RE, "[#]");
         processed_tokens.push_back(new_token);
     }
 
@@ -141,7 +140,7 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
 
-    if (!m_init || m_function_name == "init" || m_function_name == "initialise") {
+    if (!m_init || m_request_function == "init" || m_request_function == "initialise") {
         reset(plugin_interface);
     }
 
@@ -361,19 +360,19 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
 
     int return_code = 0;
-    if (m_function_name == "help") {
+    if (m_request_function == "help") {
         return_code = JSONMappingPlugin::help(plugin_interface);
-    } else if (m_function_name == "version") {
+    } else if (m_request_function == "version") {
         return_code = JSONMappingPlugin::version(plugin_interface);
-    } else if (m_function_name == "builddate") {
+    } else if (m_request_function == "builddate") {
         return_code = JSONMappingPlugin::build_date(plugin_interface);
-    } else if (m_function_name == "defaultmethod") {
+    } else if (m_request_function == "defaultmethod") {
         return_code = JSONMappingPlugin::default_method(plugin_interface);
-    } else if (m_function_name == "maxinterfaceversion") {
+    } else if (m_request_function == "maxinterfaceversion") {
         return_code = JSONMappingPlugin::max_interface_version(plugin_interface);
-    } else if (m_function_name == "read" || m_function_name == "get") {
+    } else if (m_request_function == "read" || m_request_function == "get") {
         return_code = get(plugin_interface);
-    } else if (m_function_name == "close") {
+    } else if (m_request_function == "close") {
         return_code = 0;
     } else {
         RAISE_PLUGIN_ERROR("Unknown function requested!")
@@ -413,17 +412,17 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface)
 int JSONMappingPlugin::entry_handle(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
     // set current function
-    m_function_name = static_cast<const char*>(plugin_interface->request_data->function);
+    m_request_function = static_cast<const char*>(plugin_interface->request_data->function);
 
     // housekeeping
-    if (plugin_interface->housekeeping != 0 || m_function_name == "reset") {
+    if (plugin_interface->housekeeping != 0 || m_request_function == "reset") {
         reset(plugin_interface);
         return 0;
     }
 
     // Initialise
     init(plugin_interface);
-    if (m_function_name == "init" || m_function_name == "initialise") {
+    if (m_request_function == "init" || m_request_function == "initialise") {
         return 0;
     }
 
