@@ -73,18 +73,12 @@ install(
     RENAME ${MODULE_NAME}
 )
 
-set( UDA_HOME ${UDA_DIR} )
-include_directories( ${UDA_CPP_INCLUDE_DIRS} )
-include_directories( ${CMAKE_CURRENT_LIST_DIR} )
+# Add JSON_mapping_plugin add_subdirectory
+add_subdirectory( JSON_mapping_plugin )
 
 # This list is appended to by the uda_plugin macro
 set( BUILT_PLUGINS "${PLUGINS}" )
-
-# set( PLUGINS IMAS_JSON_MAP )
 message( STATUS "PLUGINS: ${PLUGINS}" )
-add_subdirectory( JSON_mapping_plugin )
-# add_subdirectory( DRAFT_data_reader )
-# add_subdirectory( temp_geom_plugin )
 
 #
 # Generate scripts
