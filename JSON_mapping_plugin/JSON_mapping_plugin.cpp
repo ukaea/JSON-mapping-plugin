@@ -105,6 +105,12 @@ class JSONMappingPlugin
     std::string m_request_function;
 };
 
+/**
+ * @brief Extract current indices and path tokens from IMAS/IDS path
+ *
+ * @param path_tokens deque of strings containing split IDS path tokens
+ * @return {indices, processed_tokens} pair of the indices vector and tokens
+ */
 std::pair<std::vector<int>, std::deque<std::string>>
 JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
 {
@@ -177,6 +183,9 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) // sil
  * @brief Deduce the type of signal being requested/mapped,
  * currently using string comparisons
  *
+ * The final_path_element for error can be either be error_upper
+ * or error_lower so search for substring error.
+ *
  * @param element_back_str requested IDS path suffix (eg. data, time, error).
  * @note if no string is supplied, SignalType set to invalid
  * @return SignalType Enum class containing the current signal type
@@ -199,6 +208,8 @@ SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_ele
     }
     return sig_type;
 }
+
+
 
 int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface,
                                                        nlohmann::json& attributes)
