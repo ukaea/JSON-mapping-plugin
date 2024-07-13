@@ -103,7 +103,6 @@ class JSONMappingPlugin
     MappingHandler m_mapping_handler;
     bool m_init = false;
     std::string m_function_name;
-
 };
 
 std::pair<std::vector<int>, std::deque<std::string>>
