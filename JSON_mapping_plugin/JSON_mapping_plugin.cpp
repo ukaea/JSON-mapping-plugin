@@ -78,36 +78,40 @@ class JSONMappingPlugin
 {
 
   public:
-    int execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function);
+    int entry_handle(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
+  private:
+    int execute(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int init(IDAM_PLUGIN_INTERFACE* plugin_interface);
     int reset(IDAM_PLUGIN_INTERFACE* plugin_interface);
+    int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
+
     static int help(IDAM_PLUGIN_INTERFACE* plugin_interface);
     static int version(IDAM_PLUGIN_INTERFACE* plugin_interface);
     static int build_date(IDAM_PLUGIN_INTERFACE* plugin_interface);
     static int default_method(IDAM_PLUGIN_INTERFACE* plugin_interface);
     static int max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface);
-    int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
-  private:
-    bool m_init = false;
-    // Loads, controls, stores mapping file lifetime
-    MappingHandler m_mapping_handler;
-    static SignalType deduce_signal_type(std::string_view element_back_str);
+    static SignalType deduce_signal_type(std::string_view final_path_element);
     static std::pair<std::vector<int>, std::deque<std::string>>
     extract_indices(const std::deque<std::string>& path_tokens);
     static int add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface, nlohmann::json& attributes);
     static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices,
                                          IDSMapRegister_t& mappings, const std::string& full_path);
-};
 
-static boost::regex PATH_INDEX_RE{R"(\[\d+\])"};
+    // Loads, controls, stores mapping file lifetime
+    MappingHandler m_mapping_handler;
+    bool m_init = false;
+    std::string m_function_name;
+
+};
 
 std::pair<std::vector<int>, std::deque<std::string>>
 JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
 {
     std::vector<int> indices;
     std::deque<std::string> processed_tokens;
+    static boost::regex PATH_INDEX_RE{R"(\[\d+\])"};
 
     for (const auto& token : path_tokens) {
 
@@ -138,9 +142,7 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
 
-    std::string const function = static_cast<const char*>(plugin_interface->request_data->function);
-
-    if (!m_init || function == "init" || function == "initialise") {
+    if (!m_init || m_function_name == "init" || m_function_name == "initialise") {
         reset(plugin_interface);
     }
 
@@ -164,7 +166,7 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface)
  * @return errorcode UDA convention to return int errorcode
  * 0 success, !0 failure
  */
-int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/)
+int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) // silence unused warning
 {
     if (m_init) {
         // Free Heap & reset counters if initialised
@@ -356,22 +358,23 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface)
     return mappings.at(map_path)->map(map_arguments);
 }
 
-int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function)
+int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface)
 {
+
     int return_code = 0;
-    if (function == "help") {
+    if (m_function_name == "help") {
         return_code = JSONMappingPlugin::help(plugin_interface);
-    } else if (function == "version") {
+    } else if (m_function_name == "version") {
         return_code = JSONMappingPlugin::version(plugin_interface);
-    } else if (function == "builddate") {
+    } else if (m_function_name == "builddate") {
         return_code = JSONMappingPlugin::build_date(plugin_interface);
-    } else if (function == "defaultmethod") {
+    } else if (m_function_name == "defaultmethod") {
         return_code = JSONMappingPlugin::default_method(plugin_interface);
-    } else if (function == "maxinterfaceversion") {
+    } else if (m_function_name == "maxinterfaceversion") {
         return_code = JSONMappingPlugin::max_interface_version(plugin_interface);
-    } else if (function == "read" || function == "get") {
+    } else if (m_function_name == "read" || m_function_name == "get") {
         return_code = get(plugin_interface);
-    } else if (function == "close") {
+    } else if (m_function_name == "close") {
         return_code = 0;
     } else {
         RAISE_PLUGIN_ERROR("Unknown function requested!")
@@ -396,24 +399,36 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const st
 
     try {
         static JSONMappingPlugin plugin = {};
-        std::string const function = plugin_interface->request_data->function;
-
-        if (plugin_interface->housekeeping != 0 || function == "reset") {
-            plugin.reset(plugin_interface);
-            return 0;
-        }
-
-        //--------------------------------------
-        // Initialise
-        plugin.init(plugin_interface);
-        if (function == "init" || function == "initialise") {
-            return 0;
-        }
-
-        return plugin.execute(plugin_interface, function);
+        return plugin.entry_handle(plugin_interface);
     } catch (const std::exception& ex) {
         RAISE_PLUGIN_ERROR_EX(ex.what(), { concatUdaError(&plugin_interface->error_stack); })
     }
+}
+
+/**
+ * entry_handle: plugin C++ class entry point from C access
+ * and set current function call to plugin
+ * @param plugin_interface
+ * @return
+ */
+int JSONMappingPlugin::entry_handle(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
+    // set current function
+    m_function_name = static_cast<const char*>(plugin_interface->request_data->function);
+
+    // housekeeping
+    if (plugin_interface->housekeeping != 0 || m_function_name == "reset") {
+        reset(plugin_interface);
+        return 0;
+    }
+
+    // Initialise
+    init(plugin_interface);
+    if (m_function_name == "init" || m_function_name == "initialise") {
+        return 0;
+    }
+
+    return execute(plugin_interface);
 }
 
 /**
