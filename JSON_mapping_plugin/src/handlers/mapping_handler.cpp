@@ -181,7 +181,7 @@ std::optional<float> get_float_value(const std::string& name, const nlohmann::js
 } // anon namespace
 
 int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value,
-                                        const nlohmann::json& ids_attributes) {
+                                        const nlohmann::json& ids_attributes, std::shared_ptr<ram_cache::RamCache>& ram_cache) {
     auto plugin_name = value["PLUGIN"].get<std::string>();
     boost::to_upper(plugin_name);
 
@@ -192,13 +192,13 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
                                          : std::optional<std::string>{};
     auto function = value.contains("FUNCTION") ? std::optional<std::string>{value["FUNCTION"].get<std::string>()}
                                                : std::optional<std::string>{};
-
+  
     if (ids_attributes.contains("PLUGIN_CONFIG")) {
         const auto& plugin_config_map = ids_attributes["PLUGIN_CONFIG"].get<nlohmann::json>();
         apply_config(args, function, plugin_config_map, plugin_name);
     }
 
-    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function));
+    map_reg.try_emplace(key, std::make_unique<PluginMapping>(plugin_name, args, offset, scale, slice, function, ram_cache));
     return 0;
 }
 
@@ -229,7 +229,7 @@ int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t&
             init_value_mapping(temp_map_reg, key, value);
             break;
         case MappingType::PLUGIN:
-            init_plugin_mapping(temp_map_reg, key, value, attributes.at(ids_name));
+            init_plugin_mapping(temp_map_reg, key, value, attributes.at(ids_name), m_ram_cache);
             break;
         case MappingType::DIM:
             init_dim_mapping(temp_map_reg, key, value);
