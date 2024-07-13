@@ -26,19 +26,22 @@ struct MachineMapping {
 using MachineRegisterStore_t = std::unordered_map<MachineName_t, MachineMapping>;
 using MappingPair = std::pair<nlohmann::json&, IDSMapRegister_t&>;
 
-class MappingHandler {
+class MappingHandler
+{
 
   public:
-    MappingHandler() : m_init(false), m_dd_version("3.39.0"){};
-    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)){};
+    MappingHandler() : m_init(false), m_dd_version("3.39.0") {};
+    explicit MappingHandler(std::string dd_version) : m_init(false), m_dd_version(std::move(dd_version)) {};
 
-    int reset() {
+    int reset()
+    {
         m_machine_register.clear();
         m_mapping_config.clear();
         m_init = false;
         return 0;
     };
-    int init() {
+    int init()
+    {
         if (m_init || !m_machine_register.empty()) {
             return 0;
         }
@@ -71,7 +74,9 @@ class MappingHandler {
     int load_mappings(const MachineName_t& machine, const IDSName_t& ids_name);
 
     static int init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
-    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value, const nlohmann::json& ids_attributes, std::shared_ptr<ram_cache::RamCache>& ram_cache);
+    static int init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value,
+                                   const nlohmann::json& ids_attributes,
+                                   std::shared_ptr<ram_cache::RamCache>& ram_cache);
     static int init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_slice_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);
     static int init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value);

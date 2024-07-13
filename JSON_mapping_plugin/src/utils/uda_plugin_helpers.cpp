@@ -1,8 +1,10 @@
 #include "utils/uda_plugin_helpers.hpp"
 
-namespace imas_json_plugin::uda_helpers {
+namespace imas_json_plugin::uda_helpers
+{
 
-int setReturnTimeArray(DATA_BLOCK* data_block) {
+int setReturnTimeArray(DATA_BLOCK* data_block)
+{
 
     // Retrieve index of the time block
     const auto time_dim = data_block->order;

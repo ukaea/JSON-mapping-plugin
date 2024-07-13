@@ -5,51 +5,57 @@
 #include <utils/uda_type_sizes.hpp>
 // #include <utils/print_uda_structs.hpp>
 
-namespace subset {
+namespace subset
+{
 
-    void freeDimBlockContents(DATA_BLOCK* data_block, unsigned int idx)
-    {
-        if (idx >= data_block-> rank)
-        {
-            return;
-        }
-
-        auto* ddims = data_block->dims;
-        void* cptr = nullptr;
-        if ((cptr = (void*)ddims[idx].dim) != nullptr) free(cptr);
-        if ((cptr = (void*)ddims[idx].errhi) != nullptr) free(cptr);
-        if ((cptr = (void*)ddims[idx].errlo) != nullptr) free(cptr);
-        if ((cptr = (void*)ddims[idx].sams) != nullptr) free(cptr);
-        if ((cptr = (void*)ddims[idx].offs) != nullptr) free(cptr);
-        if ((cptr = (void*)ddims[idx].ints) != nullptr) free(cptr);
-
-        data_block->dims[idx].dim = nullptr;
-        data_block->dims[idx].errhi = nullptr;
-        data_block->dims[idx].errlo = nullptr;
-        data_block->dims[idx].sams = nullptr;
-        data_block->dims[idx].offs = nullptr;
-        data_block->dims[idx].ints = nullptr;
+void freeDimBlockContents(DATA_BLOCK* data_block, unsigned int idx)
+{
+    if (idx >= data_block->rank) {
+        return;
     }
 
-    void freeDimArray(DATA_BLOCK* data_block)
-    {
-        for (unsigned int i=0; i<data_block->rank; i++) 
-        {
-            freeDimBlockContents(data_block,i);
-        }
+    auto* ddims = data_block->dims;
+    void* cptr = nullptr;
+    if ((cptr = (void*)ddims[idx].dim) != nullptr)
+        free(cptr);
+    if ((cptr = (void*)ddims[idx].errhi) != nullptr)
+        free(cptr);
+    if ((cptr = (void*)ddims[idx].errlo) != nullptr)
+        free(cptr);
+    if ((cptr = (void*)ddims[idx].sams) != nullptr)
+        free(cptr);
+    if ((cptr = (void*)ddims[idx].offs) != nullptr)
+        free(cptr);
+    if ((cptr = (void*)ddims[idx].ints) != nullptr)
+        free(cptr);
 
-        free((void*)data_block->dims);
-        data_block->dims = nullptr;
-        data_block->rank = 0;
-        data_block->order = -1;
+    data_block->dims[idx].dim = nullptr;
+    data_block->dims[idx].errhi = nullptr;
+    data_block->dims[idx].errlo = nullptr;
+    data_block->dims[idx].sams = nullptr;
+    data_block->dims[idx].offs = nullptr;
+    data_block->dims[idx].ints = nullptr;
+}
+
+void freeDimArray(DATA_BLOCK* data_block)
+{
+    for (unsigned int i = 0; i < data_block->rank; i++) {
+        freeDimBlockContents(data_block, i);
     }
+
+    free((void*)data_block->dims);
+    data_block->dims = nullptr;
+    data_block->rank = 0;
+    data_block->order = -1;
+}
 
 /*
  * comvert SUBSET block from the request_block on the plugin_interface structure
  * into a vector of SubsetInfo classes for use with the current implementation of
  * the multidimensional subset function.
  */
-std::vector<SubsetInfo> subset_info_converter(const SUBSET& datasubset, const DATA_BLOCK* data_block) {
+std::vector<SubsetInfo> subset_info_converter(const SUBSET& datasubset, const DATA_BLOCK* data_block)
+{
     if (datasubset.nbound != data_block->rank) {
         throw std::runtime_error("Number of subset dimensions specified must equal dimensions of data: " +
                                  std::to_string(datasubset.nbound) + " != " + std::to_string(data_block->rank));
@@ -79,7 +85,8 @@ std::vector<SubsetInfo> subset_info_converter(const SUBSET& datasubset, const DA
  * i.e. for 3d data, index is: i + (Ni * j) + (Ni * Nj * k)
  * "index factors" here would be {1, Ni, (Ni * Nj)}
  */
-std::vector<unsigned int> get_index_factors(std::vector<unsigned int>& dim_sizes) {
+std::vector<unsigned int> get_index_factors(std::vector<unsigned int>& dim_sizes)
+{
     std::vector<unsigned int> factors = {1};
     for (unsigned int i = 1; i < dim_sizes.size(); ++i) {
         factors.emplace_back(factors[i - 1] * dim_sizes[i - 1]);
@@ -97,7 +104,8 @@ std::vector<unsigned int> get_index_factors(std::vector<unsigned int>& dim_sizes
  * for each data dimension.
  *
  */
-unsigned int get_input_offset(std::vector<unsigned int>& current_indices, std::vector<unsigned int>& index_factors) {
+unsigned int get_input_offset(std::vector<unsigned int>& current_indices, std::vector<unsigned int>& index_factors)
+{
     unsigned int result = 0;
     for (unsigned int i = 0; i < current_indices.size(); ++i) {
         result += current_indices[i] * index_factors[i];
@@ -111,7 +119,8 @@ unsigned int get_input_offset(std::vector<unsigned int>& current_indices, std::v
  * avoids recursion
  */
 template <typename T>
-std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dims, double scale_factor, double offset) {
+std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dims, double scale_factor, double offset)
+{
     log(LogLevel::DEBUG, "input size: " + std::to_string(input.size()));
     log(LogLevel::DEBUG, "input value 1: " + std::to_string(input[0]));
     log(LogLevel::DEBUG, "scaling factor is " + std::to_string(scale_factor));
@@ -147,7 +156,8 @@ std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dim
     return result;
 }
 
-template <typename T> void do_a_subset(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset) {
+template <typename T> void do_a_subset(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset)
+{
     log(LogLevel::DEBUG, "Entering do_a_subset method");
     DATA_BLOCK* data_block = plugin_interface->data_block;
     size_t bytes_size = data_block->data_n * uda_type_utils::size_of_uda_type(data_block->data_type);
@@ -179,71 +189,61 @@ template <typename T> void do_a_subset(IDAM_PLUGIN_INTERFACE* plugin_interface, 
     collapse_dims(data_block, subset_dims);
 }
 
-    void collapse_dims(DATA_BLOCK* data_block, std::vector<SubsetInfo>& subset_dims)
-    {
-        log(LogLevel::DEBUG, "running collapse dims routine");
-        auto* dims = data_block->dims;
-        unsigned int n_dims = data_block->rank;
-        log(LogLevel::DEBUG, "old dims number: " + std::to_string(n_dims));
-        log(LogLevel::DEBUG, "old time dimension: " + std::to_string(data_block->order));
-        for (const auto& subset_info: subset_dims)
-        {
-            if (subset_info.size() == 1)
-            {
-                n_dims--;
-            }
+void collapse_dims(DATA_BLOCK* data_block, std::vector<SubsetInfo>& subset_dims)
+{
+    log(LogLevel::DEBUG, "running collapse dims routine");
+    auto* dims = data_block->dims;
+    unsigned int n_dims = data_block->rank;
+    log(LogLevel::DEBUG, "old dims number: " + std::to_string(n_dims));
+    log(LogLevel::DEBUG, "old time dimension: " + std::to_string(data_block->order));
+    for (const auto& subset_info : subset_dims) {
+        if (subset_info.size() == 1) {
+            n_dims--;
         }
-        log(LogLevel::DEBUG, "new dims number: " + std::to_string(n_dims));
-        if (n_dims == data_block->rank)
-        {
-            log(LogLevel::DEBUG, "no dims to collapse");
-        }
-        else if (n_dims > 0)
-        {
-            log(LogLevel::DEBUG, "reallocating dims array");
-            DIMS* new_dims = (DIMS*) malloc(n_dims * sizeof(DIMS));
-            for (auto i=0, j=0; i<n_dims, j<data_block->rank; ++j)
-            {
-
-                if (subset_dims[j].size() == 1)
-                {
-                    log(LogLevel::DEBUG, "removing dim #" + std::to_string(j));
-                    freeDimBlockContents(data_block, j);
-                    if (data_block-> order == j)
-                    {
-                        data_block->order = -1;
-                    }
-                    continue;
-                }
-                if (data_block->order == j)
-                {
-                    data_block-> order = i;
-                }
-                log(LogLevel::DEBUG, "old dim #" + std::to_string(j) + " is now new dim #" + std::to_string(i));
-                new_dims[i++] = dims[j];
-            }
-            // all pointers contained in old dim struct passed to new dim struct (if retained) 
-            // so don't free individual data fields here. only want to free old dims array.
-            log(LogLevel::DEBUG, "freeing old dim array");
-            free((void*)dims);
-            log(LogLevel::DEBUG, "no seg-fault :)");
-
-            data_block-> dims = new_dims;
-            data_block->rank = n_dims;
-        }
-        else
-        {
-            log(LogLevel::DEBUG, "freeing old dim array");
-            freeDimArray(data_block);
-            log(LogLevel::DEBUG, "no seg-fault :)");
-            data_block->order = 0;
-            data_block->order = -1;
-        }
-        log(LogLevel::DEBUG, "new time dimension: " + std::to_string(data_block->order));
-        log(LogLevel::DEBUG, "new rank: " + std::to_string(data_block->rank));
     }
+    log(LogLevel::DEBUG, "new dims number: " + std::to_string(n_dims));
+    if (n_dims == data_block->rank) {
+        log(LogLevel::DEBUG, "no dims to collapse");
+    } else if (n_dims > 0) {
+        log(LogLevel::DEBUG, "reallocating dims array");
+        DIMS* new_dims = (DIMS*)malloc(n_dims * sizeof(DIMS));
+        for (auto i = 0, j = 0; i < n_dims, j < data_block->rank; ++j) {
 
-template <typename T> void do_dim_subset(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset) {
+            if (subset_dims[j].size() == 1) {
+                log(LogLevel::DEBUG, "removing dim #" + std::to_string(j));
+                freeDimBlockContents(data_block, j);
+                if (data_block->order == j) {
+                    data_block->order = -1;
+                }
+                continue;
+            }
+            if (data_block->order == j) {
+                data_block->order = i;
+            }
+            log(LogLevel::DEBUG, "old dim #" + std::to_string(j) + " is now new dim #" + std::to_string(i));
+            new_dims[i++] = dims[j];
+        }
+        // all pointers contained in old dim struct passed to new dim struct (if retained)
+        // so don't free individual data fields here. only want to free old dims array.
+        log(LogLevel::DEBUG, "freeing old dim array");
+        free((void*)dims);
+        log(LogLevel::DEBUG, "no seg-fault :)");
+
+        data_block->dims = new_dims;
+        data_block->rank = n_dims;
+    } else {
+        log(LogLevel::DEBUG, "freeing old dim array");
+        freeDimArray(data_block);
+        log(LogLevel::DEBUG, "no seg-fault :)");
+        data_block->order = 0;
+        data_block->order = -1;
+    }
+    log(LogLevel::DEBUG, "new time dimension: " + std::to_string(data_block->order));
+    log(LogLevel::DEBUG, "new rank: " + std::to_string(data_block->rank));
+}
+
+template <typename T> void do_dim_subset(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset)
+{
     log(LogLevel::DEBUG, "Entering do_dim_subset method");
     if (dim->compressed) {
         log(LogLevel::DEBUG, "dims were compressed");
@@ -270,83 +270,86 @@ template <typename T> void do_dim_subset(DIMS* dim, const SubsetInfo& subset_inf
     std::copy((char*)transformed_data.data(), (char*)transformed_data.data() + dim->dim_n * sizeof(T), dim->dim);
 }
 
-void apply_dim_subsetting(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset) {
+void apply_dim_subsetting(DIMS* dim, const SubsetInfo& subset_info, double scale_factor, double offset)
+{
     switch (dim->data_type) {
-    case UDA_TYPE_SHORT:
-        do_dim_subset<short>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_INT:
-        do_dim_subset<int>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_LONG:
-        do_dim_subset<long>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_LONG64:
-        do_dim_subset<int64_t>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_SHORT:
-        do_dim_subset<unsigned short>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_INT:
-        do_dim_subset<unsigned int>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_LONG:
-        do_dim_subset<unsigned long>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_LONG64:
-        do_dim_subset<uint64_t>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_FLOAT:
-        do_dim_subset<float>(dim, subset_info, scale_factor, offset);
-        break;
-    case UDA_TYPE_DOUBLE:
-        do_dim_subset<double>(dim, subset_info, scale_factor, offset);
-        break;
-    default:
-        throw std::runtime_error(std::string("uda type ") + std::to_string(dim->data_type) +
-                                 " not implemented for json_imas_mapping cache");
+        case UDA_TYPE_SHORT:
+            do_dim_subset<short>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_INT:
+            do_dim_subset<int>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_LONG:
+            do_dim_subset<long>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_LONG64:
+            do_dim_subset<int64_t>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_SHORT:
+            do_dim_subset<unsigned short>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_INT:
+            do_dim_subset<unsigned int>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_LONG:
+            do_dim_subset<unsigned long>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_LONG64:
+            do_dim_subset<uint64_t>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_FLOAT:
+            do_dim_subset<float>(dim, subset_info, scale_factor, offset);
+            break;
+        case UDA_TYPE_DOUBLE:
+            do_dim_subset<double>(dim, subset_info, scale_factor, offset);
+            break;
+        default:
+            throw std::runtime_error(std::string("uda type ") + std::to_string(dim->data_type) +
+                                     " not implemented for json_imas_mapping cache");
     }
 }
 
-void apply_subsetting(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset) {
+void apply_subsetting(IDAM_PLUGIN_INTERFACE* plugin_interface, double scale_factor, double offset)
+{
     log(LogLevel::DEBUG, "Entering apply subsetting function");
     if (plugin_interface->data_block->rank == 0)
         return;
     switch (plugin_interface->data_block->data_type) {
-    case UDA_TYPE_SHORT:
-        do_a_subset<short>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_INT:
-        do_a_subset<int>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_LONG:
-        do_a_subset<long>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_LONG64:
-        do_a_subset<int64_t>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_SHORT:
-        do_a_subset<unsigned short>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_INT:
-        do_a_subset<unsigned int>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_LONG:
-        do_a_subset<unsigned long>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_UNSIGNED_LONG64:
-        do_a_subset<uint64_t>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_FLOAT:
-        log(LogLevel::DEBUG, "uda type is float");
-        do_a_subset<float>(plugin_interface, scale_factor, offset);
-        break;
-    case UDA_TYPE_DOUBLE:
-        do_a_subset<double>(plugin_interface, scale_factor, offset);
-        break;
-    default:
-        throw std::runtime_error(std::string("uda type ") + std::to_string(plugin_interface->data_block->data_type) +
-                                 " not implemented for json_imas_mapping cache");
+        case UDA_TYPE_SHORT:
+            do_a_subset<short>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_INT:
+            do_a_subset<int>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_LONG:
+            do_a_subset<long>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_LONG64:
+            do_a_subset<int64_t>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_SHORT:
+            do_a_subset<unsigned short>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_INT:
+            do_a_subset<unsigned int>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_LONG:
+            do_a_subset<unsigned long>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_UNSIGNED_LONG64:
+            do_a_subset<uint64_t>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_FLOAT:
+            log(LogLevel::DEBUG, "uda type is float");
+            do_a_subset<float>(plugin_interface, scale_factor, offset);
+            break;
+        case UDA_TYPE_DOUBLE:
+            do_a_subset<double>(plugin_interface, scale_factor, offset);
+            break;
+        default:
+            throw std::runtime_error(std::string("uda type ") +
+                                     std::to_string(plugin_interface->data_block->data_type) +
+                                     " not implemented for json_imas_mapping cache");
     }
 }
 

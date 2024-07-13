@@ -18,12 +18,14 @@ struct MapArguments {
                           const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
                           const nlohmann::json& global_data, const SignalType sig_type)
         : m_entries{entries}, m_interface{interface}, m_global_data{global_data}, m_sig_type{sig_type},
-          m_datatype{UDA_TYPE_UNKNOWN} {
+          m_datatype{UDA_TYPE_UNKNOWN}
+    {
         extract_interface_arguments(interface);
     }
 
   private:
-    int extract_interface_arguments(const IDAM_PLUGIN_INTERFACE* interface) {
+    int extract_interface_arguments(const IDAM_PLUGIN_INTERFACE* interface)
+    {
         const NAMEVALUELIST& nv_list = interface->request_data->nameValueList;
 
         // extract values from interface

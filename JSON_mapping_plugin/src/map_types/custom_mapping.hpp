@@ -15,11 +15,12 @@ NLOHMANN_JSON_SERIALIZE_ENUM(CustomMapType_t, {{CustomMapType_t::INVALID, nullpt
  * returns 1
  *
  */
-class CustomMapping : public Mapping {
+class CustomMapping : public Mapping
+{
   public:
     CustomMapping() = delete;
     ~CustomMapping() override = default;
-    explicit CustomMapping(CustomMapType_t custom_type) : m_custom_type(custom_type){};
+    explicit CustomMapping(CustomMapType_t custom_type) : m_custom_type(custom_type) {};
     [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:

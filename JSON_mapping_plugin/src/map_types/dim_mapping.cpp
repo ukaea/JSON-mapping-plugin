@@ -2,7 +2,8 @@
 #include "map_types/base_mapping.hpp"
 #include <clientserver/udaStructs.h>
 
-int DimMapping::map(const MapArguments& arguments) const {
+int DimMapping::map(const MapArguments& arguments) const
+{
 
     if (arguments.m_entries.count(m_dim_probe) == 0) {
         return 1;

@@ -2,7 +2,8 @@
 
 #include "map_types/base_mapping.hpp"
 
-class ValueMapping : public Mapping {
+class ValueMapping : public Mapping
+{
   public:
     ValueMapping() = delete;
     ~ValueMapping() override = default;
@@ -11,7 +12,7 @@ class ValueMapping : public Mapping {
     ValueMapping& operator=(ValueMapping&&) = default;
     ValueMapping& operator=(const ValueMapping&) = default;
 
-    explicit ValueMapping(nlohmann::json value) : m_value(std::move(value)){};
+    explicit ValueMapping(nlohmann::json value) : m_value(std::move(value)) {};
     [[nodiscard]] int map(const MapArguments& arguments) const override;
 
   private:

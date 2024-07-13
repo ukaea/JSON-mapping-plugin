@@ -6,10 +6,12 @@
 #include <stdexcept>
 #include <utils/uda_type_sizes.hpp>
 
-namespace ram_cache {
+namespace ram_cache
+{
 using uda_type_utils::size_of_uda_type;
 
-std::unique_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block) {
+std::unique_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block)
+{
     log_datablock_status(data_block, "data_block before caching");
 
     auto data_entry = std::make_unique<DataEntry>();
@@ -59,7 +61,8 @@ std::unique_ptr<DataEntry> RamCache::make_data_entry(DATA_BLOCK* data_block) {
     return data_entry;
 }
 
-bool RamCache::copy_data_from_cache(const std::string& key, DATA_BLOCK* data_block) {
+bool RamCache::copy_data_from_cache(const std::string& key, DATA_BLOCK* data_block)
+{
     auto it = std::find(_keys.begin(), _keys.end(), key);
     if (it == _keys.end()) {
         return false;
@@ -102,7 +105,8 @@ bool RamCache::copy_data_from_cache(const std::string& key, DATA_BLOCK* data_blo
     return true;
 }
 
-bool RamCache::copy_error_high_from_cache(const std::string& key, DATA_BLOCK* data_block) {
+bool RamCache::copy_error_high_from_cache(const std::string& key, DATA_BLOCK* data_block)
+{
     auto it = std::find(_keys.begin(), _keys.end(), key);
     if (it == _keys.end()) {
         return false;
@@ -150,7 +154,8 @@ bool RamCache::copy_error_high_from_cache(const std::string& key, DATA_BLOCK* da
     return true;
 }
 
-bool RamCache::copy_time_from_cache(const std::string& key, DATA_BLOCK* data_block) {
+bool RamCache::copy_time_from_cache(const std::string& key, DATA_BLOCK* data_block)
+{
     auto it = std::find(_keys.begin(), _keys.end(), key);
     if (it == _keys.end()) {
         return false;
@@ -198,7 +203,8 @@ bool RamCache::copy_time_from_cache(const std::string& key, DATA_BLOCK* data_blo
     return true;
 }
 
-bool RamCache::copy_dim_from_cache(const std::string& key, unsigned int i, DATA_BLOCK* data_block) {
+bool RamCache::copy_dim_from_cache(const std::string& key, unsigned int i, DATA_BLOCK* data_block)
+{
     auto it = std::find(_keys.begin(), _keys.end(), key);
     if (it == _keys.end()) {
         return false;
@@ -246,7 +252,8 @@ bool RamCache::copy_dim_from_cache(const std::string& key, unsigned int i, DATA_
     return true;
 }
 
-bool RamCache::copy_from_cache(const std::string& key, DATA_BLOCK* data_block) {
+bool RamCache::copy_from_cache(const std::string& key, DATA_BLOCK* data_block)
+{
     auto it = std::find(_keys.begin(), _keys.end(), key);
     if (it == _keys.end()) {
         return false;

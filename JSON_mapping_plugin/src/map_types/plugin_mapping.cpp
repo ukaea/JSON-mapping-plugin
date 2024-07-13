@@ -29,7 +29,8 @@
  * @param json_globals
  * @return
  */
-std::string PluginMapping::get_request_str(const MapArguments& arguments) const {
+std::string PluginMapping::get_request_str(const MapArguments& arguments) const
+{
 
     std::stringstream string_stream;
     string_stream << m_plugin << "::" << m_function.value_or("get") << "(";
@@ -67,7 +68,8 @@ std::string PluginMapping::get_request_str(const MapArguments& arguments) const 
     return request;
 }
 
-bool PluginMapping::copy_from_cache(const MapArguments& arguments, const std::string& request_str) const {
+bool PluginMapping::copy_from_cache(const MapArguments& arguments, const std::string& request_str) const
+{
     if (!m_cache_enabled) {
         return false;
     }
@@ -76,20 +78,21 @@ bool PluginMapping::copy_from_cache(const MapArguments& arguments, const std::st
     auto* data_block = arguments.m_interface->data_block;
 
     switch (signal_type) {
-    case SignalType::DATA:
-        return m_ram_cache->copy_data_from_cache(request_str, data_block);
-    case SignalType::ERROR:
-        return m_ram_cache->copy_error_high_from_cache(request_str, data_block);
-    case SignalType::TIME:
-        return m_ram_cache->copy_time_from_cache(request_str, data_block);
-    case SignalType::DIM:
-        return m_ram_cache->copy_dim_from_cache(request_str, 1, data_block);
-    default:
-        return m_ram_cache->copy_from_cache(request_str, data_block);
+        case SignalType::DATA:
+            return m_ram_cache->copy_data_from_cache(request_str, data_block);
+        case SignalType::ERROR:
+            return m_ram_cache->copy_error_high_from_cache(request_str, data_block);
+        case SignalType::TIME:
+            return m_ram_cache->copy_time_from_cache(request_str, data_block);
+        case SignalType::DIM:
+            return m_ram_cache->copy_dim_from_cache(request_str, 1, data_block);
+        default:
+            return m_ram_cache->copy_from_cache(request_str, data_block);
     }
 }
 
-int PluginMapping::call_plugins(const MapArguments& arguments) const {
+int PluginMapping::call_plugins(const MapArguments& arguments) const
+{
 
     int err{1};
     auto request_str = get_request_str(arguments);
@@ -222,7 +225,8 @@ int PluginMapping::call_plugins(const MapArguments& arguments) const {
     return err;
 }
 
-int PluginMapping::map(const MapArguments& arguments) const {
+int PluginMapping::map(const MapArguments& arguments) const
+{
 
     int err = call_plugins(arguments);
     // temporary solution to the slice functionality returning arrays of 1 element

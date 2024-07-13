@@ -17,7 +17,8 @@ NLOHMANN_JSON_SERIALIZE_ENUM(MappingType, {{MappingType::VALUE, "VALUE"},
                                            {MappingType::CUSTOM, "CUSTOM"},
                                            {MappingType::DIM, "DIMENSION"}})
 
-class Mapping {
+class Mapping
+{
   public:
     Mapping() = default;
     virtual ~Mapping() = default;

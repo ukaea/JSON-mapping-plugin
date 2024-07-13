@@ -11,7 +11,8 @@
 #include <clientserver/udaTypes.h>
 #include <server/getServerEnvironment.h>
 
-namespace JSONMapping {
+namespace JSONMapping
+{
 
 enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
 
@@ -23,7 +24,8 @@ enum class JPLogLevel { DEBUG, INFO, WARNING, ERROR };
  * @param log_msg The message to be logged
  * @return
  */
-int JPLog(JPLogLevel log_level, std::string_view log_msg) {
+int JPLog(JPLogLevel log_level, std::string_view log_msg)
+{
 
     const ENVIRONMENT* environment = getServerEnvironment();
 
@@ -37,20 +39,20 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
     }
 
     switch (log_level) {
-    case JPLogLevel::DEBUG:
-        jp_log_file << timestamp << ":DEBUG - ";
-        break;
-    case JPLogLevel::INFO:
-        jp_log_file << timestamp << ":INFO - ";
-        break;
-    case JPLogLevel::WARNING:
-        jp_log_file << timestamp << ":WARNING - ";
-        break;
-    case JPLogLevel::ERROR:
-        jp_log_file << timestamp << ":ERROR - ";
-        break;
-    default:
-        jp_log_file << "LOG_LEVEL NOT DEFINED";
+        case JPLogLevel::DEBUG:
+            jp_log_file << timestamp << ":DEBUG - ";
+            break;
+        case JPLogLevel::INFO:
+            jp_log_file << timestamp << ":INFO - ";
+            break;
+        case JPLogLevel::WARNING:
+            jp_log_file << timestamp << ":WARNING - ";
+            break;
+        case JPLogLevel::ERROR:
+            jp_log_file << timestamp << ":ERROR - ";
+            break;
+        default:
+            jp_log_file << "LOG_LEVEL NOT DEFINED";
     }
     jp_log_file << log_msg << "\n";
     jp_log_file.close();
@@ -72,7 +74,8 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
  * (3) return the data in a format the IDS is expecting
  *
  */
-class JSONMappingPlugin {
+class JSONMappingPlugin
+{
 
   public:
     int execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function);
@@ -94,13 +97,15 @@ class JSONMappingPlugin {
     static std::pair<std::vector<int>, std::deque<std::string>>
     extract_indices(const std::deque<std::string>& path_tokens);
     static int add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface, nlohmann::json& attributes);
-    static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices, IDSMapRegister_t& mappings, const std::string& full_path);
+    static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices,
+                                         IDSMapRegister_t& mappings, const std::string& full_path);
 };
 
 static boost::regex PATH_INDEX_RE{R"(\[\d+\])"};
 
 std::pair<std::vector<int>, std::deque<std::string>>
-JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
+JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens)
+{
     std::vector<int> indices;
     std::deque<std::string> processed_tokens;
 
@@ -130,7 +135,8 @@ JSONMappingPlugin::extract_indices(const std::deque<std::string>& path_tokens) {
  * @return errorcode UDA convention to return int errorcode
  * 0 success, !0 failure
  */
-int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
 
     std::string const function = static_cast<const char*>(plugin_interface->request_data->function);
 
@@ -158,7 +164,8 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @return errorcode UDA convention to return int errorcode
  * 0 success, !0 failure
  */
-int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) {
+int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/)
+{
     if (m_init) {
         // Free Heap & reset counters if initialised
         m_init = false;
@@ -175,7 +182,8 @@ int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* /*plugin_interface*/) {
  * @return SignalType Enum class containing the current signal type
  * [DEFAULT, INVALID, DATA, TIME, ERROR]
  */
-SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_element) {
+SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_element)
+{
 
     // SignalType useful in determining for MAST-U
     SignalType sig_type{SignalType::DEFAULT};
@@ -193,7 +201,8 @@ SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_ele
 }
 
 int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface,
-                                                       nlohmann::json& attributes) {
+                                                       nlohmann::json& attributes)
+{
 
     for (int i = 0; i < plugin_interface->request_data->nameValueList.pairCount; ++i) {
         std::string const name = plugin_interface->request_data->nameValueList.nameValue[i].name;
@@ -211,7 +220,9 @@ int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* pl
     return 0;
 }
 
-std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, const std::vector<int>& indices, const std::string& full_path) {
+std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, const std::vector<int>& indices,
+                         const std::string& full_path)
+{
     // If mapping is found we are good
     if (mappings.count(path) > 0) {
         return path;
@@ -237,7 +248,9 @@ std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, co
     return "";
 }
 
-std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices, IDSMapRegister_t& mappings, const std::string& full_path) {
+std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices,
+                                                 IDSMapRegister_t& mappings, const std::string& full_path)
+{
     const auto sig_type = deduce_signal_type(path_tokens.back());
     if (sig_type == SignalType::INVALID) {
         return {}; // Don't throw, go gentle into that good night
@@ -277,7 +290,8 @@ std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_t
  * @param plugin_interface Top-level UDA plugin interface
  * @return UDA convention to return int error code (0 success, !0 failure)
  */
-int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
 
     DATA_BLOCK* data_block = plugin_interface->data_block;
     REQUEST_DATA* request_data = plugin_interface->request_data;
@@ -342,7 +356,8 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     return mappings.at(map_path)->map(map_arguments);
 }
 
-int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function) {
+int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const std::string& function)
+{
     int return_code = 0;
     if (function == "help") {
         return_code = JSONMappingPlugin::help(plugin_interface);
@@ -370,7 +385,8 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const st
  * @param plugin_interface
  * @return
  */
-[[maybe_unused]] int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+[[maybe_unused]] int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
 
     if (plugin_interface->interfaceVersion > THISPLUGIN_MAX_INTERFACE_VERSION) {
         RAISE_PLUGIN_ERROR("Plugin Interface Version Unknown to this plugin: Unable to execute the request!")
@@ -405,7 +421,8 @@ int JSONMappingPlugin::execute(IDAM_PLUGIN_INTERFACE* plugin_interface, const st
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::help(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::help(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
     const char* help = "\nJSONMappingPlugin: Add Functions Names, Syntax, and "
                        "Descriptions\n\n";
     const char* desc = "templatePlugin: help = description of this plugin";
@@ -418,7 +435,8 @@ int JSONMappingPlugin::help(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
     return setReturnDataIntScalar(plugin_interface->data_block, THISPLUGIN_VERSION, "Plugin version number");
 }
 
@@ -427,7 +445,8 @@ int JSONMappingPlugin::version(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::build_date(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::build_date(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
     return setReturnDataString(plugin_interface->data_block, __DATE__, "Plugin build date");
 }
 
@@ -436,7 +455,8 @@ int JSONMappingPlugin::build_date(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::default_method(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::default_method(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
     return setReturnDataString(plugin_interface->data_block, THISPLUGIN_DEFAULT_METHOD, "Plugin default method");
 }
 
@@ -445,7 +465,8 @@ int JSONMappingPlugin::default_method(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * @param plugin_interface
  * @return
  */
-int JSONMappingPlugin::max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface) {
+int JSONMappingPlugin::max_interface_version(IDAM_PLUGIN_INTERFACE* plugin_interface)
+{
     return setReturnDataIntScalar(plugin_interface->data_block, THISPLUGIN_MAX_INTERFACE_VERSION,
                                   "Maximum Interface Version");
 }

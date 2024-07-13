@@ -29,7 +29,8 @@
  * retrieved regardless of the expression operation.
  *
  */
-class ExprMapping : public Mapping {
+class ExprMapping : public Mapping
+{
   public:
     ExprMapping() = delete;
     ExprMapping(std::string expr, std::unordered_map<std::string, std::string> parameters)
@@ -61,7 +62,8 @@ class ExprMapping : public Mapping {
  * @param global_data global JSON object used in templating
  * @return int error_code
  */
-template <typename T> int ExprMapping::eval_expr(const MapArguments& arguments) const {
+template <typename T> int ExprMapping::eval_expr(const MapArguments& arguments) const
+{
 
     exprtk::symbol_table<T> symbol_table;
     exprtk::expression<T> expression;

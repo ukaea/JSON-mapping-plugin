@@ -12,9 +12,11 @@
 #include <utils/print_uda_structs.hpp>
 #include <vector>
 
-namespace subset {
+namespace subset
+{
 
-class SubsetInfo {
+class SubsetInfo
+{
   private:
     uint64_t _start;
     uint64_t _stop;
@@ -25,12 +27,12 @@ class SubsetInfo {
     inline explicit SubsetInfo(uint64_t size) : _start(0), _stop(size), _dim_size(size) {}
 
     inline SubsetInfo(uint64_t start, uint64_t stop, int stride, uint64_t size)
-        : _start(start), _stop(stop), _stride(stride), _dim_size(size) {
- 
-            if (start == 0 and stop == 0)
-            {
-                _stop = size;
-            };
+        : _start(start), _stop(stop), _stride(stride), _dim_size(size)
+    {
+
+        if (start == 0 and stop == 0) {
+            _stop = size;
+        };
     }
 
     [[nodiscard]] inline uint64_t size() const { return std::floor((_stop - _start) / _stride); }
@@ -45,7 +47,8 @@ class SubsetInfo {
 
     [[nodiscard]] inline uint64_t dim_size() const { return _dim_size; }
 
-    [[nodiscard]] inline std::string print_to_string() const {
+    [[nodiscard]] inline std::string print_to_string() const
+    {
         std::stringstream ss;
         ss << "start: " << _start << std::endl;
         ss << "stop: " << _stop << std::endl;
@@ -71,10 +74,10 @@ std::vector<T> subset(std::vector<T>& input, std::vector<SubsetInfo>& subset_dim
 
 void collapse_dims(DATA_BLOCK* data_block, std::vector<SubsetInfo>& subset_dims);
 
-
 enum class LogLevel { DEBUG, INFO, WARNING, ERROR };
 
-inline int log(LogLevel log_level, std::string_view log_msg) {
+inline int log(LogLevel log_level, std::string_view log_msg)
+{
 
     const char* log_env_option = getenv("UDA_JSON_MAPPING_SUBSET_LOGGING");
     if (log_env_option == nullptr or std::stoi(log_env_option) <= 0) {
@@ -93,20 +96,20 @@ inline int log(LogLevel log_level, std::string_view log_msg) {
     }
 
     switch (log_level) {
-    case LogLevel::DEBUG:
-        log_file << timestamp << ":DEBUG - ";
-        break;
-    case LogLevel::INFO:
-        log_file << timestamp << ":INFO - ";
-        break;
-    case LogLevel::WARNING:
-        log_file << timestamp << ":WARNING - ";
-        break;
-    case LogLevel::ERROR:
-        log_file << timestamp << ":ERROR - ";
-        break;
-    default:
-        log_file << "LOG_LEVEL NOT DEFINED";
+        case LogLevel::DEBUG:
+            log_file << timestamp << ":DEBUG - ";
+            break;
+        case LogLevel::INFO:
+            log_file << timestamp << ":INFO - ";
+            break;
+        case LogLevel::WARNING:
+            log_file << timestamp << ":WARNING - ";
+            break;
+        case LogLevel::ERROR:
+            log_file << timestamp << ":ERROR - ";
+            break;
+        default:
+            log_file << "LOG_LEVEL NOT DEFINED";
     }
     log_file << log_msg << "\n";
     log_file.close();
@@ -114,7 +117,8 @@ inline int log(LogLevel log_level, std::string_view log_msg) {
     return 0;
 }
 
-inline void log_request_status(REQUEST_DATA* request_data, const std::string message) {
+inline void log_request_status(REQUEST_DATA* request_data, const std::string message)
+{
     log(LogLevel::DEBUG, message + "\n" + uda_structs::print_request_data(request_data));
 }
 } // namespace subset

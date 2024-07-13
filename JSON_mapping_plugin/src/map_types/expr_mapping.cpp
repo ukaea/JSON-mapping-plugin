@@ -16,7 +16,8 @@ template int ExprMapping::eval_expr<float>(const MapArguments& arguments) const;
  * @param global_data global JSON object used in templating
  * @return int error_code
  */
-int ExprMapping::map(const MapArguments& arguments) const {
+int ExprMapping::map(const MapArguments& arguments) const
+{
 
     // Float only currently for testing purposes
     return eval_expr<float>(arguments);

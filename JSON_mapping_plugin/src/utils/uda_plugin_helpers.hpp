@@ -11,9 +11,11 @@
 #include <clientserver/udaTypes.h>
 #include <gsl/gsl-lite.hpp>
 
-namespace imas_json_plugin::uda_helpers {
+namespace imas_json_plugin::uda_helpers
+{
 
-inline std::unordered_map<std::string, UDA_TYPE> uda_type_map() {
+inline std::unordered_map<std::string, UDA_TYPE> uda_type_map()
+{
     static std::unordered_map<std::string, UDA_TYPE> type_map;
     if (type_map.empty()) {
         type_map = {{typeid(unsigned int).name(), UDA_TYPE_UNSIGNED_INT},
@@ -26,7 +28,8 @@ inline std::unordered_map<std::string, UDA_TYPE> uda_type_map() {
 
 int setReturnTimeArray(DATA_BLOCK* data_block);
 
-template <typename T> int setReturnDataScalarType(DATA_BLOCK* data_block, T value, const char* description = nullptr) {
+template <typename T> int setReturnDataScalarType(DATA_BLOCK* data_block, T value, const char* description = nullptr)
+{
 
     initDataBlock(data_block);
 
@@ -48,7 +51,8 @@ template <typename T> int setReturnDataScalarType(DATA_BLOCK* data_block, T valu
 
 template <typename T>
 int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gsl::span<const size_t> shape,
-                           const char* description = nullptr) {
+                           const char* description = nullptr)
+{
 
     initDataBlock(data_block);
 
@@ -94,7 +98,8 @@ int setReturnDataArrayType(DATA_BLOCK* data_block, gsl::span<const T> values, gs
 
 template <typename T>
 int setReturnDataArrayType_Vec(DATA_BLOCK* data_block, const std::vector<T>& vec_values,
-                               const char* description = nullptr) {
+                               const char* description = nullptr)
+{
 
     initDataBlock(data_block);
 
@@ -132,8 +137,8 @@ int setReturnDataArrayType_Vec(DATA_BLOCK* data_block, const std::vector<T>& vec
 }
 
 template <typename T>
-int setReturnDataValArray(DATA_BLOCK* data_block, const std::valarray<T>& va_values,
-                          const char* description = nullptr) {
+int setReturnDataValArray(DATA_BLOCK* data_block, const std::valarray<T>& va_values, const char* description = nullptr)
+{
 
     initDataBlock(data_block);
 
