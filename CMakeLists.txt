@@ -18,7 +18,7 @@ set( CMAKE_MODULE_PATH
      ${CMAKE_SOURCE_DIR}/cmake/Modules
 )
 
-find_package( Boost REQUIRED )
+find_package( Boost CONFIG )
 
 #
 # Set project options
