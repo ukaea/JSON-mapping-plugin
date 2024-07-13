@@ -19,6 +19,7 @@ set( CMAKE_MODULE_PATH
 )
 
 find_package( Boost CONFIG )
+find_package( UDA 2.7.0 REQUIRED )
 
 #
 # Set project options
@@ -71,18 +72,6 @@ install(
     DESTINATION ${MODULE_PATH_EXPANDED}
     RENAME ${MODULE_NAME}
 )
-
-#
-# Find UDA and RPC
-#
-if( TIRPC )
-  find_package( TIRPC REQUIRED )
-  include_directories( ${TIRPC_INCLUDE_DIRS} )
-  link_libraries( ${TIRPC_LIBRARIES} )
-  add_definitions( -DTIRPC )
-endif()
-
-find_package( UDA 2.7.0 REQUIRED )
 
 set( UDA_HOME ${UDA_DIR} )
 include_directories( ${UDA_CPP_INCLUDE_DIRS} )
