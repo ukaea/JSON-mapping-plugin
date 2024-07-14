@@ -11,7 +11,38 @@
 #include "map_types/plugin_mapping.hpp"
 #include "map_types/value_mapping.hpp"
 
-std::optional<MappingPair> MappingHandler::read_mappings(const MachineName_t& machine, const std::string& request_ids)
+int MappingHandler::reset()
+{
+    m_machine_register.clear();
+    m_mapping_config.clear();
+    m_init = false;
+    return 0;
+}
+
+int MappingHandler::init()
+{
+    if (m_init || !m_machine_register.empty()) {
+        return 0;
+    }
+
+    char* cache_size_str = getenv("UDA_JSON_MAPPING_CACHE_SIZE");
+    char* enable_caching_str = getenv("UDA_JSON_MAPPING_USE_CACHE");
+
+    bool enable_caching = (enable_caching_str == nullptr) or (std::stoi(enable_caching_str) > 0);
+
+    if (enable_caching) {
+        const std::size_t cache_size = (cache_size_str != nullptr) ? std::stoi(cache_size_str) : ram_cache::default_size;
+        m_ram_cache = std::make_shared<ram_cache::RamCache>(cache_size);
+    } else {
+        m_ram_cache = nullptr;
+    }
+    m_cache_enabled = m_ram_cache != nullptr;
+
+    m_init = true;
+    return 0;
+}
+
+std::optional<MappingPair> MappingHandler::read_mappings(const MachineName& machine, const std::string& request_ids)
 {
     load_machine(machine);
     if (m_machine_register.count(machine) == 0) {
@@ -32,7 +63,7 @@ int MappingHandler::set_map_dir(const std::string& mapping_dir)
     return 0;
 }
 
-std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDSName_t& ids_name,
+std::string MappingHandler::mapping_path(const MachineName& machine, const IDSName& ids_name,
                                          const std::string& file_name)
 {
     if (ids_name.empty()) {
@@ -41,7 +72,7 @@ std::string MappingHandler::mapping_path(const MachineName_t& machine, const IDS
     return m_mapping_dir + "/" + machine + "/" + ids_name + "/" + file_name;
 }
 
-int MappingHandler::load_machine(const MachineName_t& machine)
+int MappingHandler::load_machine(const MachineName& machine)
 {
     if (m_machine_register.count(machine) == 1) {
         // machine already loaded
@@ -67,7 +98,7 @@ int MappingHandler::load_machine(const MachineName_t& machine)
     return 0;
 }
 
-nlohmann::json MappingHandler::load_toplevel(const MachineName_t& machine)
+nlohmann::json MappingHandler::load_toplevel(const MachineName& machine)
 {
 
     auto file_path = mapping_path(machine, "", "globals.json");
@@ -91,7 +122,7 @@ nlohmann::json MappingHandler::load_toplevel(const MachineName_t& machine)
     return toplevel_globals;
 }
 
-int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& ids_name)
+int MappingHandler::load_globals(const MachineName& machine, const IDSName& ids_name)
 {
 
     auto file_path = mapping_path(machine, ids_name, "globals.json");
@@ -117,7 +148,7 @@ int MappingHandler::load_globals(const MachineName_t& machine, const IDSName_t& 
     return 0;
 }
 
-int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t& ids_name)
+int MappingHandler::load_mappings(const MachineName& machine, const IDSName& ids_name)
 {
 
     auto file_path = mapping_path(machine, ids_name, "mappings.json");
@@ -141,7 +172,7 @@ int MappingHandler::load_mappings(const MachineName_t& machine, const IDSName_t&
     return 0;
 }
 
-int MappingHandler::init_value_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value)
+int MappingHandler::init_value_mapping(IDSMapRegister& map_reg, const std::string& key, const nlohmann::json& value)
 {
     const auto& value_json = value.at("VALUE");
     map_reg.try_emplace(key, std::make_unique<ValueMapping>(value_json));
@@ -191,7 +222,7 @@ std::optional<float> get_float_value(const std::string& name, const nlohmann::js
 
 } // namespace
 
-int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value,
+int MappingHandler::init_plugin_mapping(IDSMapRegister& map_reg, const std::string& key, const nlohmann::json& value,
                                         const nlohmann::json& ids_attributes,
                                         std::shared_ptr<ram_cache::RamCache>& ram_cache)
 {
@@ -216,13 +247,13 @@ int MappingHandler::init_plugin_mapping(IDSMapRegister_t& map_reg, const std::st
     return 0;
 }
 
-int MappingHandler::init_dim_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value)
+int MappingHandler::init_dim_mapping(IDSMapRegister& map_reg, const std::string& key, const nlohmann::json& value)
 {
     map_reg.try_emplace(key, std::make_unique<DimMapping>(value["DIM_PROBE"].get<std::string>()));
     return 0;
 }
 
-int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value)
+int MappingHandler::init_expr_mapping(IDSMapRegister& map_reg, const std::string& key, const nlohmann::json& value)
 {
     map_reg.try_emplace(
         key, std::make_unique<ExprMapping>(value["EXPR"].get<std::string>(),
@@ -230,16 +261,16 @@ int MappingHandler::init_expr_mapping(IDSMapRegister_t& map_reg, const std::stri
     return 0;
 }
 
-int MappingHandler::init_custom_mapping(IDSMapRegister_t& map_reg, const std::string& key, const nlohmann::json& value)
+int MappingHandler::init_custom_mapping(IDSMapRegister& map_reg, const std::string& key, const nlohmann::json& value)
 {
     map_reg.try_emplace(key, std::make_unique<CustomMapping>(value["CUSTOM_TYPE"].get<CustomMapType_t>()));
     return 0;
 }
 
-int MappingHandler::init_mappings(const MachineName_t& machine, const IDSName_t& ids_name, const nlohmann::json& data)
+int MappingHandler::init_mappings(const MachineName& machine, const IDSName& ids_name, const nlohmann::json& data)
 {
     const auto& attributes = m_machine_register[machine].attributes;
-    IDSMapRegister_t temp_map_reg;
+    IDSMapRegister temp_map_reg;
     for (const auto& [key, value] : data.items()) {
 
         switch (value["MAP_TYPE"].get<MappingType>()) {

@@ -97,7 +97,7 @@ class JSONMappingPlugin
     extract_indices(const std::deque<std::string>& path_tokens);
     static int add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface, nlohmann::json& attributes);
     static std::string generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices,
-                                         IDSMapRegister_t& mappings, const std::string& full_path);
+                                         IDSMapRegister& mappings, const std::string& full_path);
 
     // Loads, controls, stores mapping file lifetime
     MappingHandler m_mapping_handler;
@@ -231,7 +231,7 @@ int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* pl
     return 0;
 }
 
-std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, const std::vector<int>& indices,
+std::string find_mapping(IDSMapRegister& mappings, const std::string& path, const std::vector<int>& indices,
                          const std::string& full_path)
 {
     // If mapping is found we are good
@@ -260,7 +260,7 @@ std::string find_mapping(IDSMapRegister_t& mappings, const std::string& path, co
 }
 
 std::string JSONMappingPlugin::generate_map_path(std::deque<std::string>& path_tokens, const std::vector<int>& indices,
-                                                 IDSMapRegister_t& mappings, const std::string& full_path)
+                                                 IDSMapRegister& mappings, const std::string& full_path)
 {
     const auto sig_type = deduce_signal_type(path_tokens.back());
     if (sig_type == SignalType::INVALID) {
