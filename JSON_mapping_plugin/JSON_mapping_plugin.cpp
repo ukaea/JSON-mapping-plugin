@@ -209,8 +209,6 @@ SignalType JSONMappingPlugin::deduce_signal_type(std::string_view final_path_ele
     return sig_type;
 }
 
-
-
 int JSONMappingPlugin::add_machine_specific_attributes(IDAM_PLUGIN_INTERFACE* plugin_interface,
                                                        nlohmann::json& attributes)
 {
