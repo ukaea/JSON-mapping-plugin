@@ -21,16 +21,17 @@ class Mapping {
     Mapping() = default;
     virtual ~Mapping() = default;
     virtual int map(IDAM_PLUGIN_INTERFACE* interface,
-                    const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
+                    const std::unordered_map<std::string,
+                                             std::unique_ptr<Mapping>>& entries,
                     const nlohmann::json& global_data) const = 0;
     [[nodiscard]] std::vector<int> get_current_indices() const {
-        return _request_data.indices;
+        return m_request_data.indices;
     }
     int set_current_request_data(NAMEVALUELIST* nvlist);
     int set_current_request_data_map(
         std::unordered_map<std::string, std::string>& nvlist);
     int set_sig_type(SignalType sig_type) {
-        _request_data.sig_type = sig_type;
+        m_request_data.sig_type = sig_type;
         return 0;
     };
 
@@ -42,20 +43,23 @@ class Mapping {
         std::vector<int> indices;
         SignalType sig_type;
     };
-    RequestStruct _request_data;
+    RequestStruct m_request_data;
 };
 
 class ValueEntry : public Mapping {
   public:
     ValueEntry() = delete;
     ~ValueEntry() override = default;
-    explicit ValueEntry(nlohmann::json value) : _value{std::move(value)} {};
+    explicit ValueEntry(nlohmann::json value) : m_value{std::move(value)} {};
     int map(IDAM_PLUGIN_INTERFACE* interface,
-            const std::unordered_map<std::string, std::unique_ptr<Mapping>>& entries,
+            const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
+                entries,
             const nlohmann::json& global_data) const override;
 
   private:
-    nlohmann::json _value;
-    int type_deduc_array(DATA_BLOCK* data_block, const nlohmann::json& arrValue) const;
-    int type_deduc_prim(DATA_BLOCK* data_block, const nlohmann::json& numValue, const nlohmann::json& global_data) const;
+    nlohmann::json m_value;
+    int type_deduc_array(DATA_BLOCK* data_block,
+                         const nlohmann::json& arrValue) const;
+    int type_deduc_prim(DATA_BLOCK* data_block, const nlohmann::json& numValue,
+                        const nlohmann::json& global_data) const;
 };

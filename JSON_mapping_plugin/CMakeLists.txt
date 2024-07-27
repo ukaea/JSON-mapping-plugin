@@ -13,43 +13,10 @@ set( CONFIGS
 
 set( JSON_LIBNAME JSON_mapping_plugin )
 
-set(SOURCES
-  JSON_mapping_plugin.cpp
-  src/tmp.cpp
-  src/handlers/mapping_handler.cpp
-  src/map_types/base_entry.cpp
-  src/map_types/map_entry.cpp
-  src/map_types/dim_entry.cpp
-  src/map_types/slice_entry.cpp
-  src/map_types/expr_entry.cpp
-  src/map_types/custom_entry.cpp
-  src/utils/uda_plugin_helpers.cpp
-  src/utils/scale_offset.cpp
-)
-
-set(HEADERS
-  JSON_mapping_plugin.h
-  src/tmp.hpp
-  src/handlers/mapping_handler.hpp
-  src/map_types/base_entry.hpp
-  src/map_types/map_entry.hpp
-  src/map_types/dim_entry.hpp
-  src/map_types/slice_entry.hpp
-  src/map_types/expr_entry.hpp
-  src/map_types/custom_entry.hpp
-  src/utils/uda_plugin_helpers.hpp
-  src/utils/scale_offset.hpp
-)
-
+include_directories( ${INCLUDE_DIRS} )
 if(${PROJECT_NAME}_ENABLE_UNIT_TESTING)
     add_library(${PROJECT_NAME} ${SOURCES})
 endif()
-
-set(INCLUDE_DIRS
-  include
-  ext_include
-  src
-)
 
 include( plugins )
 uda_plugin(
@@ -61,7 +28,6 @@ uda_plugin(
     SOURCES ${SOURCES} 
     CONFIG_FILE ${CONFIGS}
     EXTRA_INCLUDE_DIRS
-      ${INCLUDE_DIRS}
       ${UDA_CLIENT_INCLUDE_DIRS}
       ${Boost_INCLUDE_DIRS}
     EXTRA_LINK_DIRS

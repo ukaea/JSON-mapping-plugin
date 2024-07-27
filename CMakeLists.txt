@@ -71,6 +71,7 @@ install(
     RENAME ${MODULE_NAME}
     )
 
+include( SourcesAndHeaders )
 #
 # Find UDA and RPC
 #

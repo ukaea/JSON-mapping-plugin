@@ -17,8 +17,8 @@ class MapEntry : public Mapping {
     MapEntry() = delete;
     MapEntry(std::pair<PluginType, std::string> plugin, MapArgs_t request_args,
              std::optional<float> offset, std::optional<float> scale)
-        : _plugin{std::move(plugin)}, _map_args{std::move(request_args)},
-          _offset{offset}, _scale{scale} {};
+        : m_plugin{std::move(plugin)}, m_map_args{std::move(request_args)},
+          m_offset{offset}, m_scale{scale} {};
 
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
@@ -26,10 +26,10 @@ class MapEntry : public Mapping {
             const nlohmann::json& json_globals) const override;
 
   private:
-    std::pair<PluginType, std::string> _plugin;
-    MapArgs_t _map_args;
-    std::optional<float> _offset;
-    std::optional<float> _scale;
+    std::pair<PluginType, std::string> m_plugin;
+    MapArgs_t m_map_args;
+    std::optional<float> m_offset;
+    std::optional<float> m_scale;
 
     [[nodiscard]] std::string
     get_request_str(const nlohmann::json& json_globals) const;

@@ -13,20 +13,20 @@
 MappingPair MappingHandler::read_mappings(const std::string& request_ids) {
     // AJP :: Safety check if ids request not in mapping json (and typo
     // obviously)
-    return std::make_pair(std::ref(_ids_attributes[request_ids]),
-                          std::ref(_ids_map_register[request_ids]));
+    return std::make_pair(std::ref(m_ids_attributes[request_ids]),
+                          std::ref(m_ids_map_register[request_ids]));
 }
 
 int MappingHandler::set_map_dir(const std::string& mapping_dir) {
-    _mapping_dir = mapping_dir;
+    m_mapping_dir = mapping_dir;
     return 0;
 }
 
 int MappingHandler::load_all() {
 
-    std::ifstream map_cfg_file(_mapping_dir + "/mappings.cfg.json");
+    std::ifstream map_cfg_file(m_mapping_dir + "/mappings.cfg.json");
     if (map_cfg_file) {
-        map_cfg_file >> _mapping_config;
+        map_cfg_file >> m_mapping_config;
         map_cfg_file.close();
     } else {
         RAISE_PLUGIN_ERROR("MappingHandler::load_configs - Cannot open JSON "
@@ -34,7 +34,7 @@ int MappingHandler::load_all() {
     }
 
     for (const auto& ids_str :
-         _mapping_config[_imas_version].get<std::vector<std::string>>()) {
+         m_mapping_config[m_imas_version].get<std::vector<std::string>>()) {
         load_globals(ids_str);
         load_mappings(ids_str);
     }
@@ -44,7 +44,7 @@ int MappingHandler::load_all() {
 
 int MappingHandler::load_globals(const std::string& ids_str) {
 
-    std::string file_path{_mapping_dir + "/mappings/" + ids_str + "/" +
+    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" +
                           "globals.json"};
 
     std::ifstream globals_file;
@@ -61,7 +61,7 @@ int MappingHandler::load_globals(const std::string& ids_str) {
         }
         globals_file.close();
 
-        _ids_attributes[ids_str] = temp_globals; // Record globals
+        m_ids_attributes[ids_str] = temp_globals; // Record globals
 
     } else {
         RAISE_PLUGIN_ERROR(
@@ -72,7 +72,7 @@ int MappingHandler::load_globals(const std::string& ids_str) {
 
 int MappingHandler::load_mappings(const std::string& ids_str) {
 
-    std::string file_path{_mapping_dir + "/mappings/" + ids_str + "/" +
+    std::string file_path{m_mapping_dir + "/mappings/" + ids_str + "/" +
                           "mappings.json"};
 
     std::ifstream map_file;
@@ -122,7 +122,7 @@ int MappingHandler::init_mappings(const std::string& ids_name,
                         try {
                             const auto post_inja_str = inja::render(
                                 value_local[var_str].get<std::string>(),
-                                _ids_attributes[ids_name]);
+                                m_ids_attributes[ids_name]);
                             opt_float = std::stof(post_inja_str);
                         } catch (const std::invalid_argument& e) {
                             UDA_LOG(UDA_LOG_DEBUG,
@@ -177,7 +177,7 @@ int MappingHandler::init_mappings(const std::string& ids_name,
         }
     }
 
-    _ids_map_register.try_emplace(ids_name, std::move(temp_map_reg));
+    m_ids_map_register.try_emplace(ids_name, std::move(temp_map_reg));
     UDA_LOG(UDA_LOG_DEBUG, "calling read function \n");
 
     return 0;

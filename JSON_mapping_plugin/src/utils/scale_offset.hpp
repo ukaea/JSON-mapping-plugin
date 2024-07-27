@@ -10,7 +10,7 @@ template <typename T> int offset_value(T& temp_var, float offset) {
 
     *temp_var += offset;
     return 0;
-}
+};
 
 template <typename T> int offset_span(gsl::span<T> temp_span, float offset) {
 
@@ -22,13 +22,13 @@ template <typename T> int offset_span(gsl::span<T> temp_span, float offset) {
                   [&offset](T& elem) { elem += offset; });
 
     return 0;
-}
+};
 
 template <typename T> int scale_value(T& temp_var, float scale) {
 
     *temp_var *= scale;
     return 0;
-}
+};
 
 template <typename T> int scale_span(gsl::span<T> temp_span, float scale) {
 
@@ -40,6 +40,6 @@ template <typename T> int scale_span(gsl::span<T> temp_span, float scale) {
                   [&scale](T& elem) { elem *= scale; });
 
     return 0;
-}
+};
 
 } // namespace JMP::map_transform

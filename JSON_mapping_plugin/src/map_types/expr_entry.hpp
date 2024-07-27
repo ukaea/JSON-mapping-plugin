@@ -16,9 +16,9 @@
  * @brief ExprEntry class to the hold the EXPR MAP_TYPE after parsing from the
  * JSON mapping file
  *
- * The class holds an expression std::string '_expr' for evaluation and
+ * The class holds an expression std::string 'm_expr' for evaluation and
  * computation when mapping. The string is evaluated by the templating library
- * pantor/inja on object creation. '_parameters' holds the std::strings of the
+ * pantor/inja on object creation. 'm_parameters' holds the std::strings of the
  * variables needed to evaluate the expression, eg. X+Y requires knowledge or
  * data retrieval of X and Y.
  *
@@ -34,7 +34,7 @@ class ExprEntry : public Mapping {
     ExprEntry() = delete;
     ExprEntry(std::string expr,
               std::unordered_map<std::string, std::string> parameters)
-        : _expr{std::move(expr)}, _parameters{std::move(parameters)} {};
+        : m_expr{std::move(expr)}, m_parameters{std::move(parameters)} {};
 
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
@@ -42,8 +42,8 @@ class ExprEntry : public Mapping {
             const nlohmann::json& global_data) const override;
 
   private:
-    std::string _expr;
-    std::unordered_map<std::string, std::string> _parameters;
+    std::string m_expr;
+    std::unordered_map<std::string, std::string> m_parameters;
 
     template <typename T>
     int eval_expr(IDAM_PLUGIN_INTERFACE* interface,
@@ -87,13 +87,13 @@ int ExprEntry::eval_expr(
             {orig_nvlist->nameValue[i].name, orig_nvlist->nameValue[i].value});
     }
 
-    std::vector<char*> parameters_ptrs(_parameters.size());
+    std::vector<char*> parameters_ptrs(m_parameters.size());
     bool vector_expr{false};
     bool first_vec_param{true};
     size_t result_size{1};
 
     symbol_table.add_constants();
-    for (const auto& [key, json_name] : _parameters) {
+    for (const auto& [key, json_name] : m_parameters) {
 
         initDataBlock(out_interface->data_block); // Reset datablock per param
         entries.at(json_name)->set_current_request_data_map(orig_nvlist_map);
@@ -131,7 +131,7 @@ int ExprEntry::eval_expr(
     expression.register_symbol_table(symbol_table);
 
     // replace patterns in expression if necessary, eg expression: RESULT:=X+Y
-    std::string expr_string{"RESULT:=" + inja::render(_expr, global_data)};
+    std::string expr_string{"RESULT:=" + inja::render(m_expr, global_data)};
     parser.compile(expr_string, expression);
     expression.value(); // Evaluate expression
 
@@ -150,4 +150,4 @@ int ExprEntry::eval_expr(
     }
 
     return 0;
-}
+};

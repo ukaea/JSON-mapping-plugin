@@ -26,12 +26,12 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
 
     // TODO: replace dependence on boost in the future
     // stringstream?
-    std::string request_str = _plugin.second + "::get(";
+    std::string request_str = m_plugin.second + "::get(";
 
-    // _map_args 'field' currently nlohmann json
+    // m_map_args 'field' currently nlohmann json
     // parse to string/bool
     // TODO: change, however std::any/std::variant functionality for free
-    for (const auto& [key, field] : _map_args) {
+    for (const auto& [key, field] : m_map_args) {
         if (field.is_string()) {
             request_str +=
                 (boost::format("%s=%s, ") % key %
@@ -46,13 +46,13 @@ MapEntry::get_request_str(const nlohmann::json& json_globals) const {
         }
     }
     request_str +=
-        (boost::format("source=%i, host=%s, port=%i)") % _request_data.shot %
-         _request_data.host % _request_data.port)
+        (boost::format("source=%i, host=%s, port=%i)") % m_request_data.shot %
+         m_request_data.host % m_request_data.port)
             .str();
 
     // Add slice to request (when implemented)
-    // if (_slice.has_value()) {
-    //     request_str += (boost::format("[%s]") % _slice).str();
+    // if (m_slice.has_value()) {
+    //     request_str += (boost::format("[%s]") % m_slice).str();
     // }
 
     UDA_LOG(UDA_LOG_DEBUG, "AJP Request : %s\n", request_str.c_str());
@@ -73,23 +73,23 @@ int MapEntry::call_plugins(IDAM_PLUGIN_INTERFACE* interface,
         return err;
     } // return code if failure, no need to proceed
 
-    if (_request_data.sig_type == SignalType::TIME) {
+    if (m_request_data.sig_type == SignalType::TIME) {
         // Opportunity to handle time differently
         // Return time SignalType early, no need to scale/offset
-        if (_plugin.first == PluginType::UDA) {
+        if (m_plugin.first == PluginType::UDA) {
             err = imas_json_plugin::uda_helpers::setReturnTimeArray(
                 interface->data_block);
         }
         return err;
     }
 
-    if (_scale.has_value()) {
+    if (m_scale.has_value()) {
         err = JMP::map_transform::transform_scale(interface->data_block,
-                                                  _scale.value());
+                                                  m_scale.value());
     }
-    if (_offset.has_value()) {
+    if (m_offset.has_value()) {
         err = JMP::map_transform::transform_offset(interface->data_block,
-                                                   _offset.value());
+                                                   m_offset.value());
     }
 
     return err;

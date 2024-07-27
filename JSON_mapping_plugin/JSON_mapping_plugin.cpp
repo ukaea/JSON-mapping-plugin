@@ -74,9 +74,9 @@ int JPLog(JPLogLevel log_level, std::string_view log_msg) {
     jp_log_file.close();
 
     return 0;
-}
+};
 
-} // namespace JSONMapping
+}; // namespace JSONMapping
 
 /**
  * @class JSONMappingPlugin
@@ -103,9 +103,9 @@ class JSONMappingPlugin {
     int get(IDAM_PLUGIN_INTERFACE* plugin_interface);
 
   private:
-    bool _init = false;
+    bool m_init = false;
     // Loads, controls, stores mapping file lifetime
-    MappingHandler _mapping_handler;
+    MappingHandler m_mapping_handler;
     SignalType deduc_sig_type(std::string_view element_back_str);
 };
 
@@ -122,14 +122,14 @@ class JSONMappingPlugin {
 int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     REQUEST_DATA* request_data = plugin_interface->request_data;
-    if (!_init || STR_IEQUALS(request_data->function, "init") ||
+    if (!m_init || STR_IEQUALS(request_data->function, "init") ||
         STR_IEQUALS(request_data->function, "initialise")) {
         reset(plugin_interface);
     }
 
     std::string map_dir = getenv("JSON_MAPPING_DIR");
     if (!map_dir.empty()) {
-        _mapping_handler.set_map_dir(map_dir);
+        m_mapping_handler.set_map_dir(map_dir);
     } else {
         JSONMapping::JPLog(
             JSONMapping::JPLogLevel::ERROR,
@@ -137,7 +137,7 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
         RAISE_PLUGIN_ERROR(
             "JSONMappingPlugin::init: - JSON mapping locations not set");
     }
-    _mapping_handler.init();
+    m_mapping_handler.init();
 
     return 0;
 }
@@ -150,9 +150,9 @@ int JSONMappingPlugin::init(IDAM_PLUGIN_INTERFACE* plugin_interface) {
  * 0 success, !0 failure
  */
 int JSONMappingPlugin::reset(IDAM_PLUGIN_INTERFACE* plugin_interface) {
-    if (_init) {
+    if (m_init) {
         // Free Heap & reset counters if initialised
-        _init = false;
+        m_init = false;
     }
     return 0;
 }
@@ -205,14 +205,11 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     // TODO: put into plugin relevant structure
     const char* IDS_version{nullptr};
-    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, IDS_version);
-
     const char* experiment{nullptr};
+    FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, IDS_version);
     FIND_STRING_VALUE(request_data->nameValueList, experiment);
-
     const char* element{nullptr};
     FIND_REQUIRED_STRING_VALUE(request_data->nameValueList, element);
-
     std::string ids_path{element};
 
     std::deque<std::string> split_elem_vec;
@@ -232,7 +229,7 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // Returns a reference to IDS map objects and corresponding globals
     // Mapping object lifetime owned by mapping_handler
     const auto& [ids_attrs_map, map_entries] =
-        _mapping_handler.read_mappings(current_ids);
+        m_mapping_handler.read_mappings(current_ids);
 
     if (map_entries.empty()) {
         JSONMapping::JPLog(JSONMapping::JPLogLevel::ERROR,
@@ -270,13 +267,15 @@ int JSONMappingPlugin::get(IDAM_PLUGIN_INTERFACE* plugin_interface) {
     // TODO: Rethink request data store when parsing NameValueList
     // Find/Set request data such as host, port, shot,
     // indices + signal type
-    map_entries[map_path]->set_current_request_data(&request_data->nameValueList);
+    map_entries[map_path]->set_current_request_data(
+        &request_data->nameValueList);
     map_entries[map_path]->set_sig_type(sig_type);
     // Add request indices to globals
     ids_attrs_map["indices"] = map_entries[map_path]->get_current_indices();
 
     // For mapping object perform mapping
-    return map_entries[map_path]->map(plugin_interface, map_entries, ids_attrs_map);
+    return map_entries[map_path]->map(plugin_interface, map_entries,
+                                      ids_attrs_map);
 }
 
 /**
@@ -299,37 +298,41 @@ int jsonMappingPlugin(IDAM_PLUGIN_INTERFACE* plugin_interface) {
 
     try {
         static JSONMappingPlugin plugin = {};
-        std::string plugin_func = request_data->function;
-        boost::to_lower(plugin_func);
+        auto* const plugin_func = request_data->function;
 
-        if (plugin_interface->housekeeping || plugin_func == "reset") {
+        if (plugin_interface->housekeeping ||
+            STR_IEQUALS(plugin_func, "reset")) {
             plugin.reset(plugin_interface);
             return 0;
         }
-
         //--------------------------------------
         // Initialise
         plugin.init(plugin_interface);
-        if (plugin_func == "init" || plugin_func == "initialise") {
+        if (STR_IEQUALS(plugin_func, "init") ||
+            STR_IEQUALS(plugin_func, "initialise")) {
             return 0;
         }
-
         //--------------------------------------
         // Standard methods: version, builddate, defaultmethod,
         // maxinterfaceversion
-        if (plugin_func == "help") {
+        if (STR_IEQUALS(plugin_func, "help")) {
             return plugin.help(plugin_interface);
-        } else if (plugin_func == "version") {
+        } else if (STR_IEQUALS(plugin_func, "version")) {
             return plugin.version(plugin_interface);
-        } else if (plugin_func == "builddate") {
+        } else if (STR_IEQUALS(plugin_func, "builddate")) {
             return plugin.build_date(plugin_interface);
-        } else if (plugin_func == "defaultmethod") {
+        } else if (STR_IEQUALS(plugin_func, "defaultmethod")) {
             return plugin.default_method(plugin_interface);
-        } else if (plugin_func == "maxinterfaceversion") {
+        } else if (STR_IEQUALS(plugin_func, "maxinterfaceversion")) {
             return plugin.max_interface_version(plugin_interface);
-        } else if (plugin_func == "read" || plugin_func == "get") {
+        } else if (STR_IEQUALS(plugin_func, "read")) {
+            UDA_LOG(UDA_LOG_DEBUG, "calling get function (read given) \n");
             return plugin.get(plugin_interface);
-        } else if (plugin_func == "close") {
+        } else if (STR_IEQUALS(plugin_func, "get")) {
+            UDA_LOG(UDA_LOG_DEBUG, "calling get function \n");
+            return plugin.get(plugin_interface);
+        } else if (STR_IEQUALS(plugin_func, "close")) {
+            UDA_LOG(UDA_LOG_DEBUG, "calling close function \n");
             return 0;
         } else {
             RAISE_PLUGIN_ERROR("Unknown function requested!");

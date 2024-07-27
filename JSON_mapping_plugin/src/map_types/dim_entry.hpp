@@ -6,7 +6,7 @@ class DimEntry : public Mapping {
   public:
     DimEntry() = delete;
     explicit DimEntry(std::string dim_probe)
-        : _dim_probe{std::move(dim_probe)} {};
+        : m_dim_probe{std::move(dim_probe)} {};
 
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
@@ -14,5 +14,5 @@ class DimEntry : public Mapping {
             const nlohmann::json& json_globals) const override;
 
   private:
-    std::string _dim_probe;
+    std::string m_dim_probe;
 };

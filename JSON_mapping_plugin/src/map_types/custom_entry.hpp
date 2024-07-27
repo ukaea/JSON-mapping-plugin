@@ -21,14 +21,14 @@ class CustomEntry : public Mapping {
     CustomEntry() = delete;
     ~CustomEntry() override = default;
     explicit CustomEntry(CustomMapType_t custom_type)
-        : _custom_type(custom_type){};
+        : m_custom_type(custom_type){};
     int map(IDAM_PLUGIN_INTERFACE* interface,
             const std::unordered_map<std::string, std::unique_ptr<Mapping>>&
                 entries,
             const nlohmann::json& global_data) const override;
 
   private:
-    CustomMapType_t _custom_type;
+    CustomMapType_t m_custom_type;
 
     int MASTU_helloworld(DATA_BLOCK* data_block) const;
     int DRAFT_helloworld(DATA_BLOCK* data_block) const;
